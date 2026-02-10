@@ -198,13 +198,27 @@ export default function PublicoPage() {
         }}
       >
         <img
-          src="https://whxeijdmxfteizyabtwi.supabase.co/storage/v1/object/public/assets/Img/banner%20superior.png"
+          src="https://whxeijdmxfteizyabtwi.supabase.co/storage/v1/object/public/assets/Img/BANNER%201A.png"
           alt="Banner superior"
           style={{
             width: "100%",
             height: "auto",
             display: "block",
             borderRadius: 12,
+          }}
+        />
+        <img
+          src="https://whxeijdmxfteizyabtwi.supabase.co/storage/v1/object/public/assets/Img/logo_animado.gif"
+          alt="Logo animado"
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "60%",
+            height: "auto",
+            objectFit: "contain",
+            pointerEvents: "none",
           }}
         />
         <img
@@ -233,6 +247,7 @@ export default function PublicoPage() {
           display: "flex",
           gap: 10,
           alignItems: "center",
+          position: "relative",
         }}
       >
         <div style={{ display: "flex", flexDirection: "column" }}>
@@ -252,7 +267,7 @@ export default function PublicoPage() {
               color: "#0f172a",
             }}
           >
-            Observaciones
+            👷‍♂️ Bienvenido al sistema de observaciones👋
           </div>
           <div style={{ fontSize: 12, color: "#6b7280" }}>
             Vista p&uacute;blica &middot; Pendientes: {pendientes.length} &middot; Cerradas:{" "}
@@ -261,6 +276,22 @@ export default function PublicoPage() {
         </div>
 
         <div style={{ flex: 1 }} />
+
+        <img
+          src="https://whxeijdmxfteizyabtwi.supabase.co/storage/v1/object/public/assets/Img/volcan_cerro_loop_12s_fundido.gif"
+          alt="Volc&aacute;n"
+          style={{
+            position: "absolute",
+            left: "54%",
+            top: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "min(240px, 42vw)",
+            height: "auto",
+            maxHeight: "72%",
+            objectFit: "contain",
+            pointerEvents: "none",
+          }}
+        />
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <Link
@@ -354,7 +385,16 @@ export default function PublicoPage() {
                           {o.area} &middot; {o.equipo_lugar}
                         </div>
                         <div style={{ fontSize: 12, color: "#2563eb", fontWeight: 900 }}>
-                          NIVEL DE RIESGO: <span style={{ color: "#0f172a" }}>{o.categoria}</span>
+                          NIVEL DE RIESGO:{" "}
+                          <span
+                            style={{
+                              color: getRiesgoColor(o.categoria),
+                              fontWeight: 900,
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            {o.categoria}
+                          </span>
                         </div>
                         <div style={{ fontSize: 12, color: "#2563eb", fontWeight: 900 }}>
                           FECHA ESTIMADA: <span style={{ color: "#0f172a" }}>{o.plazo}</span>
@@ -453,7 +493,16 @@ export default function PublicoPage() {
                         {o.area} &middot; {o.equipo_lugar}
                       </div>
                       <div style={{ fontSize: 12, color: "#2563eb", fontWeight: 900 }}>
-                        NIVEL DE RIESGO: <span style={{ color: "#0f172a" }}>{o.categoria}</span>
+                        NIVEL DE RIESGO:{" "}
+                        <span
+                          style={{
+                            color: getRiesgoColor(o.categoria),
+                            fontWeight: 900,
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          {o.categoria}
+                        </span>
                       </div>
                       <div style={{ fontSize: 12, color: "#2563eb", fontWeight: 900 }}>
                         FECHA DE CIERRE:{" "}
@@ -576,9 +625,24 @@ export default function PublicoPage() {
         </div>
       </div>
 
-      <div style={{ margin: "22px auto 0", display: "flex", justifyContent: "center" }}>
+      <div style={{ maxWidth: 1100, margin: "18px auto 0", position: "relative" }}>
+        <img
+          src="https://whxeijdmxfteizyabtwi.supabase.co/storage/v1/object/public/assets/Img/BANER%201B.png"
+          alt="Banner inferior"
+          style={{
+            width: "100%",
+            height: "auto",
+            display: "block",
+            borderRadius: 12,
+          }}
+        />
+
         <div
           style={{
+            position: "absolute",
+            left: "50%",
+            bottom: 12,
+            transform: "translateX(-50%)",
             background: "white",
             border: "2px solid #2563eb",
             borderRadius: 999,
@@ -599,19 +663,6 @@ export default function PublicoPage() {
             }}
           />
         </div>
-      </div>
-
-      <div style={{ maxWidth: 1100, margin: "18px auto 0" }}>
-        <img
-          src="https://whxeijdmxfteizyabtwi.supabase.co/storage/v1/object/public/assets/Img/banner%20inferior.png"
-          alt="Banner inferior"
-          style={{
-            width: "100%",
-            height: "auto",
-            display: "block",
-            borderRadius: 12,
-          }}
-        />
       </div>
 
       {/* Modal Zoom Evidencia */}

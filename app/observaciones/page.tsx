@@ -661,14 +661,23 @@ export default function ObservacionesPage() {
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ fontSize: 20, fontWeight: 900 }}>Observaciones</div>
           <div
-            className="mt-1 flex items-center gap-2 text-2xl font-extrabold"
-            style={{ fontFamily: "Sora, Segoe UI, sans-serif" }}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              padding: "6px 12px",
+              borderRadius: 999,
+              border: "1px solid rgba(14,165,233,0.35)",
+              background:
+                "linear-gradient(90deg, rgba(14,165,233,0.18) 0%, rgba(99,102,241,0.18) 50%, rgba(34,197,94,0.18) 100%)",
+              boxShadow: "0 8px 20px rgba(14,165,233,0.25)",
+              fontFamily: "Sora, Segoe UI, sans-serif",
+              fontWeight: 900,
+              fontSize: 20,
+              color: "#0f172a",
+              marginTop: 4,
+            }}
           >
-            <span className="text-4xl leading-none">{"\uD83D\uDE4B\u200D\u2642\uFE0F"}</span>
-            <span style={{ color: "#38bdf8" }}>
-              Bienvenido{perfil?.nombre ? `, ${perfil.nombre}` : ""}
-            </span>
-            <span className="text-4xl leading-none">{"\uD83D\uDC4B"}</span>
+            👷‍♂️ Bienvenido{perfil?.nombre ? `, ${perfil.nombre}` : ""} 👋
           </div>
           <div style={{ fontSize: 12, color: "#6b7280" }}>
             Pendientes: {pendientes.length} · Cerradas: {cerradas.length}
@@ -808,7 +817,14 @@ export default function ObservacionesPage() {
                         </div>
                         <div style={{ fontSize: 12, color: "#2563eb", fontWeight: 900 }}>
                           NIVEL DE RIESGO:{" "}
-                          <span style={{ color: "#0f172a", fontSize: 12, fontWeight: 900 }}>
+                          <span
+                            style={{
+                              color: getRiesgoColor(o.categoria),
+                              fontSize: 12,
+                              fontWeight: 900,
+                              textTransform: "uppercase",
+                            }}
+                          >
                             {o.categoria}
                           </span>
                         </div>
@@ -954,7 +970,14 @@ export default function ObservacionesPage() {
                       </div>
                       <div style={{ fontSize: 12, color: "#2563eb", fontWeight: 900 }}>
                         NIVEL DE RIESGO:{" "}
-                        <span style={{ color: "#0f172a", fontSize: 12, fontWeight: 900 }}>
+                        <span
+                          style={{
+                            color: getRiesgoColor(o.categoria),
+                            fontSize: 12,
+                            fontWeight: 900,
+                            textTransform: "uppercase",
+                          }}
+                        >
                           {o.categoria}
                         </span>
                       </div>
