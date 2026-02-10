@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabaseBrowser as supabase } from "@/lib/supabase-browser";
+import { AREAS, CATEGORIAS } from "@/lib/constants";
+import styles from "./nueva/page.module.css";
 
 type Perfil = {
   id: string;
@@ -33,6 +34,12 @@ type Obs = {
 };
 
 type Semaforo = "verde" | "amarillo" | "rojo";
+
+function getRiesgoColor(categoria: Obs["categoria"]) {
+  if (categoria === "bajo") return "#16a34a";
+  if (categoria === "alto") return "#ef4444";
+  return "#f59e0b";
+}
 
 function parsePlazoToDate(plazo: string): Date | null {
   if (!plazo) return null;
@@ -143,11 +150,60 @@ export default function ObservacionesPage() {
   const [closeUrl, setCloseUrl] = useState("");
   const [closeFile, setCloseFile] = useState<File | null>(null);
   const [savingClose, setSavingClose] = useState(false);
+  const [closeError, setCloseError] = useState<string | null>(null);
+  const [closeInvalid, setCloseInvalid] = useState<{ desc: boolean; evidencia: boolean }>({
+    desc: false,
+    evidencia: false,
+  });
+
+  // modal nueva
+  const [newOpen, setNewOpen] = useState(false);
+  const [newArea, setNewArea] = useState<string>(AREAS[0] || "chancado");
+  const [newEquipoLugar, setNewEquipoLugar] = useState("");
+  const [newCategoria, setNewCategoria] = useState<Obs["categoria"]>("medio");
+  const [newPlazo, setNewPlazo] = useState("");
+  const [newDescripcion, setNewDescripcion] = useState("");
+  const [newFile, setNewFile] = useState<File | null>(null);
+  const [newUploading, setNewUploading] = useState(false);
+  const [savingNew, setSavingNew] = useState(false);
+  const [newUploadUrl, setNewUploadUrl] = useState<string | null>(null);
+  const [newError, setNewError] = useState<string | null>(null);
+  const [newInvalid, setNewInvalid] = useState<{ equipo: boolean; plazo: boolean; desc: boolean }>({
+    equipo: false,
+    plazo: false,
+    desc: false,
+  });
+
+  // modal editar
+  const [editOpen, setEditOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<Obs | null>(null);
+  const [editArea, setEditArea] = useState<string>(AREAS[0] || "chancado");
+  const [editEquipoLugar, setEditEquipoLugar] = useState("");
+  const [editCategoria, setEditCategoria] = useState<Obs["categoria"]>("medio");
+  const [editPlazo, setEditPlazo] = useState("");
+  const [editDescripcion, setEditDescripcion] = useState("");
+  const [editResponsable, setEditResponsable] = useState("");
+  const [editFile, setEditFile] = useState<File | null>(null);
+  const [editUploading, setEditUploading] = useState(false);
+  const [editCurrentUrl, setEditCurrentUrl] = useState<string | null>(null);
+  const [editUploadUrl, setEditUploadUrl] = useState<string | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editInvalid, setEditInvalid] = useState<{ equipo: boolean; plazo: boolean; desc: boolean }>({
+    equipo: false,
+    plazo: false,
+    desc: false,
+  });
+
+  const newEquipoRef = useRef<HTMLInputElement | null>(null);
+  const editEquipoRef = useRef<HTMLInputElement | null>(null);
+  const closeDescRef = useRef<HTMLTextAreaElement | null>(null);
 
   // modal zoom evidencia
   const [zoomOpen, setZoomOpen] = useState(false);
   const [zoomUrl, setZoomUrl] = useState<string | null>(null);
   const [zoomLabel, setZoomLabel] = useState<string>("");
+  const [zoomTouchStartY, setZoomTouchStartY] = useState<number | null>(null);
 
   // delete (admin)
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -234,6 +290,30 @@ export default function ObservacionesPage() {
     })();
   }, []);
 
+  useEffect(() => {
+    if (!newOpen && !editOpen && !closeOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (closeOpen && !savingClose) setCloseOpen(false);
+      if (editOpen && !savingEdit && !editUploading) setEditOpen(false);
+      if (newOpen && !savingNew && !newUploading) setNewOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [newOpen, editOpen, closeOpen, savingClose, savingEdit, editUploading, savingNew, newUploading]);
+
+  useEffect(() => {
+    if (newOpen) newEquipoRef.current?.focus();
+  }, [newOpen]);
+
+  useEffect(() => {
+    if (editOpen) editEquipoRef.current?.focus();
+  }, [editOpen]);
+
+  useEffect(() => {
+    if (closeOpen) closeDescRef.current?.focus();
+  }, [closeOpen]);
+
   async function logout() {
     await supabase.auth.signOut();
     window.location.href = "/login";
@@ -256,7 +336,38 @@ export default function ObservacionesPage() {
     setCloseDesc("");
     setCloseUrl("");
     setCloseFile(null);
+    setCloseError(null);
+    setCloseInvalid({ desc: false, evidencia: false });
     setCloseOpen(true);
+  }
+
+  function openNuevaModal() {
+    setNewArea(AREAS[0] || "chancado");
+    setNewEquipoLugar("");
+    setNewCategoria("medio");
+    setNewPlazo("");
+    setNewDescripcion("");
+    setNewFile(null);
+    setNewUploadUrl(null);
+    setNewError(null);
+    setNewInvalid({ equipo: false, plazo: false, desc: false });
+    setNewOpen(true);
+  }
+
+  function openEditarModal(obs: Obs) {
+    setEditTarget(obs);
+    setEditResponsable(obs.responsable || "");
+    setEditArea(obs.area || (AREAS[0] || "chancado"));
+    setEditEquipoLugar(obs.equipo_lugar || "");
+    setEditCategoria(obs.categoria || "medio");
+    setEditPlazo(obs.plazo || "");
+    setEditDescripcion(obs.descripcion || "");
+    setEditCurrentUrl(obs.evidencia_url || null);
+    setEditFile(null);
+    setEditUploadUrl(null);
+    setEditError(null);
+    setEditInvalid({ equipo: false, plazo: false, desc: false });
+    setEditOpen(true);
   }
 
   async function uploadEvidencia(file: File) {
@@ -284,12 +395,152 @@ export default function ObservacionesPage() {
     return publicUrl;
   }
 
+  async function subirArchivoNuevo() {
+    if (!newFile) return null;
+    setNewUploading(true);
+    try {
+      const url = await uploadEvidencia(newFile);
+      setNewUploadUrl(url);
+      return url;
+    } finally {
+      setNewUploading(false);
+    }
+  }
+
+  async function subirArchivoEditar() {
+    if (!editFile) return null;
+    setEditUploading(true);
+    try {
+      const url = await uploadEvidencia(editFile);
+      setEditUploadUrl(url);
+      return url;
+    } finally {
+      setEditUploading(false);
+    }
+  }
+
+  async function guardarNueva(e: React.FormEvent) {
+    e.preventDefault();
+    if (!perfil) return;
+
+    setNewError(null);
+    setNewInvalid({ equipo: false, plazo: false, desc: false });
+
+    if (!newEquipoLugar.trim()) {
+      setNewError("Completa los campos obligatorios.");
+      setNewInvalid({ equipo: true, plazo: false, desc: false });
+      newEquipoRef.current?.focus();
+      return;
+    }
+    if (!newPlazo) {
+      setNewError("Selecciona el plazo.");
+      setNewInvalid({ equipo: false, plazo: true, desc: false });
+      return;
+    }
+    if (!newDescripcion.trim()) {
+      setNewError("Completa la descripción.");
+      setNewInvalid({ equipo: false, plazo: false, desc: true });
+      return;
+    }
+
+    setSavingNew(true);
+    try {
+      const evidenciaUrl = await subirArchivoNuevo();
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const email = session?.user?.email || `${perfil.dni}@observaciones.local`;
+
+      const payload = {
+        estado: "pendiente",
+        responsable: perfil.nombre,
+        area: newArea,
+        equipo_lugar: newEquipoLugar.trim(),
+        categoria: newCategoria,
+        plazo: newPlazo,
+        descripcion: newDescripcion.trim(),
+        evidencia_url: evidenciaUrl ?? null,
+        creado_por: email,
+        creado_en: new Date().toISOString(),
+      };
+
+      const { error } = await supabase.from("observaciones").insert(payload);
+      if (error) {
+        alert("Error guardando: " + error.message);
+        return;
+      }
+
+      setNewOpen(false);
+      await load();
+    } finally {
+      setSavingNew(false);
+    }
+  }
+
+  async function guardarEdicion(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editTarget) return;
+
+    setEditError(null);
+    setEditInvalid({ equipo: false, plazo: false, desc: false });
+
+    if (!editEquipoLugar.trim()) {
+      setEditError("Completa los campos obligatorios.");
+      setEditInvalid({ equipo: true, plazo: false, desc: false });
+      editEquipoRef.current?.focus();
+      return;
+    }
+    if (!editPlazo) {
+      setEditError("Selecciona el plazo.");
+      setEditInvalid({ equipo: false, plazo: true, desc: false });
+      return;
+    }
+    if (!editDescripcion.trim()) {
+      setEditError("Completa la descripción.");
+      setEditInvalid({ equipo: false, plazo: false, desc: true });
+      return;
+    }
+
+    setSavingEdit(true);
+    try {
+      const newUrl = await subirArchivoEditar();
+      const evidenciaFinal = newUrl ?? editCurrentUrl ?? null;
+
+      const payload = {
+        area: editArea,
+        equipo_lugar: editEquipoLugar.trim(),
+        categoria: editCategoria,
+        plazo: editPlazo,
+        descripcion: editDescripcion.trim(),
+        evidencia_url: evidenciaFinal,
+      };
+
+      const { error } = await supabase.from("observaciones").update(payload).eq("id", editTarget.id);
+      if (error) {
+        alert("Error guardando: " + error.message);
+        return;
+      }
+
+      setEditOpen(false);
+      setEditTarget(null);
+      await load();
+    } finally {
+      setSavingEdit(false);
+    }
+  }
+
   async function confirmarCierre() {
     if (!closeTarget) return;
 
+    setCloseError(null);
+    setCloseInvalid({ desc: false, evidencia: false });
+
     const desc = closeDesc.trim();
     if (!desc) {
-      alert("La descripción del trabajo es obligatoria.");
+      setCloseError("La descripción del trabajo es obligatoria.");
+      setCloseInvalid({ desc: true, evidencia: false });
+      closeDescRef.current?.focus();
       return;
     }
 
@@ -299,7 +550,8 @@ export default function ObservacionesPage() {
     const hasUrl = !!url;
 
     if (!hasFile && !hasUrl) {
-      alert("La evidencia es obligatoria: sube un archivo o pega una URL.");
+      setCloseError("La evidencia es obligatoria: sube un archivo o pega una URL.");
+      setCloseInvalid({ desc: false, evidencia: true });
       return;
     }
 
@@ -408,8 +660,15 @@ export default function ObservacionesPage() {
       >
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ fontSize: 20, fontWeight: 900 }}>Observaciones</div>
-          <div style={{ fontSize: 13, color: "#111827", fontWeight: 800, marginTop: 4 }}>
-            👷‍♂️ Bienvenido{perfil?.nombre ? `, ${perfil.nombre}` : ""} ✅
+          <div
+            className="mt-1 flex items-center gap-2 text-2xl font-extrabold"
+            style={{ fontFamily: "Sora, Segoe UI, sans-serif" }}
+          >
+            <span className="text-4xl leading-none">{"\uD83D\uDE4B\u200D\u2642\uFE0F"}</span>
+            <span style={{ color: "#38bdf8" }}>
+              Bienvenido{perfil?.nombre ? `, ${perfil.nombre}` : ""}
+            </span>
+            <span className="text-4xl leading-none">{"\uD83D\uDC4B"}</span>
           </div>
           <div style={{ fontSize: 12, color: "#6b7280" }}>
             Pendientes: {pendientes.length} · Cerradas: {cerradas.length}
@@ -429,22 +688,23 @@ export default function ObservacionesPage() {
 
         <div style={{ flex: 1 }} />
 
-        <Link
-          href="/observaciones/nueva"
+        <button
+          onClick={openNuevaModal}
           style={{
             background: "#0ea5e9",
             color: "white",
             padding: "10px 14px",
             borderRadius: 10,
-            textDecoration: "none",
+            border: "1px solid rgba(0,0,0,0.12)",
             fontWeight: 800,
             display: "inline-flex",
             gap: 8,
             alignItems: "center",
+            cursor: "pointer",
           }}
         >
           ➕ Nueva observación
-        </Link>
+        </button>
 
         <button
           onClick={async () => {
@@ -477,6 +737,24 @@ export default function ObservacionesPage() {
         >
           Salir
         </button>
+
+        <a
+          href="/dashboard"
+          style={{
+            padding: "10px 14px",
+            borderRadius: 10,
+            border: "1px solid #0ea5e9",
+            background: "#0ea5e9",
+            color: "white",
+            fontWeight: 900,
+            textDecoration: "none",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          📊 Dashboard
+        </a>
       </div>
 
       {/* Listado */}
@@ -506,7 +784,7 @@ export default function ObservacionesPage() {
                   <div
                     key={o.id}
                     style={{
-                      border: "2px solid #f59e0b",
+                      border: `2px solid ${getRiesgoColor(o.categoria)}`,
                       borderRadius: 14,
                       padding: 14,
                       background: "#ffffff",
@@ -516,8 +794,8 @@ export default function ObservacionesPage() {
                     <div
                       style={{
                         display: "grid",
-                        gridTemplateColumns: "1fr 140px 1fr",
-                        gap: 14,
+                        gridTemplateColumns: "1fr 120px 1fr",
+                        gap: 12,
                         alignItems: "center",
                       }}
                     >
@@ -529,7 +807,10 @@ export default function ObservacionesPage() {
                           {o.area} · {o.equipo_lugar}
                         </div>
                         <div style={{ fontSize: 12, color: "#2563eb", fontWeight: 900 }}>
-                          NIVEL DE RIESGO: <span style={{ color: "#0f172a" }}>{o.categoria}</span>
+                          NIVEL DE RIESGO:{" "}
+                          <span style={{ color: "#0f172a", fontSize: 12, fontWeight: 900 }}>
+                            {o.categoria}
+                          </span>
                         </div>
                         <div style={{ fontSize: 12, color: "#2563eb", fontWeight: 900 }}>
                           FECHA ESTIMADA:{" "}
@@ -543,10 +824,12 @@ export default function ObservacionesPage() {
                             type="button"
                             onClick={() => openZoom(o.evidencia_url || "", "Evidencia")}
                             style={{
-                              border: "2px solid #111827",
-                              background: "white",
-                              borderRadius: 10,
-                              padding: 2,
+                              border: "1px solid rgba(14,165,233,0.45)",
+                              background:
+                                "linear-gradient(90deg, rgba(14,165,233,0.18) 0%, rgba(99,102,241,0.18) 50%, rgba(34,197,94,0.18) 100%)",
+                              boxShadow: "0 8px 20px rgba(14,165,233,0.25)",
+                              borderRadius: 14,
+                              padding: 3,
                               cursor: "zoom-in",
                             }}
                           >
@@ -596,21 +879,19 @@ export default function ObservacionesPage() {
                           </button>
 
                           <button
-                            type="button"
-                            disabled
-                            title="Ruta de edición no definida"
+                            onClick={() => openEditarModal(o)}
                             style={{
                               background: "#f8fafc",
-                              color: "#64748b",
+                              color: "#334155",
                               border: "1px solid #cbd5f5",
                               padding: "6px 10px",
                               borderRadius: 8,
                               fontWeight: 800,
                               fontSize: 12,
-                              cursor: "not-allowed",
                               display: "inline-flex",
                               alignItems: "center",
                               gap: 8,
+                              cursor: "pointer",
                             }}
                           >
                             ✏️ Editar
@@ -646,7 +927,7 @@ export default function ObservacionesPage() {
                 <div
                   key={o.id}
                   style={{
-                    border: "2px solid #f59e0b",
+                    border: `2px solid ${getRiesgoColor(o.categoria)}`,
                     borderRadius: 14,
                     padding: 14,
                     background: "#ffffff",
@@ -672,7 +953,10 @@ export default function ObservacionesPage() {
                         {o.area} · {o.equipo_lugar}
                       </div>
                       <div style={{ fontSize: 12, color: "#2563eb", fontWeight: 900 }}>
-                        NIVEL DE RIESGO: <span style={{ color: "#0f172a" }}>{o.categoria}</span>
+                        NIVEL DE RIESGO:{" "}
+                        <span style={{ color: "#0f172a", fontSize: 12, fontWeight: 900 }}>
+                          {o.categoria}
+                        </span>
                       </div>
                       <div style={{ fontSize: 12, color: "#2563eb", fontWeight: 900 }}>
                         FECHA DE CIERRE:{" "}
@@ -686,60 +970,75 @@ export default function ObservacionesPage() {
                       {o.evidencia_url || o.cierre_evidencia_url ? (
                         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center", gap: 10 }}>
                           {o.evidencia_url && (
-                            <button
-                              type="button"
-                              onClick={() => openZoom(o.evidencia_url || "", "Antes")}
-                              style={{
-                                position: "relative",
-                                width: 120,
-                                height: 120,
-                                borderRadius: 12,
-                                border: "2px solid #0f172a",
-                                background: "white",
-                                padding: 4,
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                              }}
-                            >
-                              <img
-                                src={o.evidencia_url}
-                                alt="Antes"
+                            <div style={{ display: "grid", justifyItems: "center", gap: 6 }}>
+                              <button
+                                type="button"
+                                onClick={() => openZoom(o.evidencia_url || "", "Antes")}
                                 style={{
-                                  width: 108,
-                                  height: 108,
-                                  borderRadius: 10,
-                                  objectFit: "cover",
-                                  display: "block",
-                                }}
-                              />
-                              <div
-                                style={{
-                                  position: "absolute",
-                                  bottom: 4,
-                                  fontSize: 10,
-                                  fontWeight: 900,
-                                  color: "#ef4444",
+                                  width: 120,
+                                  height: 120,
+                                  borderRadius: 14,
+                                  border: "1px solid rgba(14,165,233,0.45)",
+                                  background:
+                                    "linear-gradient(90deg, rgba(14,165,233,0.18) 0%, rgba(99,102,241,0.18) 50%, rgba(34,197,94,0.18) 100%)",
+                                  boxShadow: "0 8px 20px rgba(14,165,233,0.25)",
+                                  padding: 4,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  cursor: "zoom-in",
                                 }}
                               >
-                                ANTES
-                              </div>
-                            </button>
+                                <img
+                                  src={o.evidencia_url}
+                                  alt="Antes"
+                                  style={{
+                                    width: 108,
+                                    height: 108,
+                                    borderRadius: 10,
+                                    objectFit: "cover",
+                                    display: "block",
+                                  }}
+                                />
+                              </button>
+                              <div style={{ fontSize: 10, fontWeight: 900, color: "#ef4444" }}>ANTES</div>
+                            </div>
                           )}
 
                           {o.cierre_evidencia_url && (
-                            <button
-                              type="button"
-                              onClick={() => openZoom(o.cierre_evidencia_url || "", "Después")}
-                              style={{                                position: "relative",                                width: 120,                                height: 120,                                borderRadius: 12,                                border: "2px solid #0f172a",                                background: "white",                                padding: 4,                                display: "inline-flex",                                alignItems: "center",                                justifyContent: "center",                              }}
-                            >
-                              <img
-                                src={o.cierre_evidencia_url}
-                                alt="Después"
-                                style={{                                  width: 108,                                  height: 108,                                  borderRadius: 10,                                  objectFit: "cover",                                  display: "block",                                }}
-                              />
-                              <div                                style={{                                  position: "absolute",                                  bottom: 4,                                  fontSize: 10,                                  fontWeight: 900,                                  color: "#16a34a",                                }}                              >                                DESPUÉS                              </div>
-                            </button>
+                            <div style={{ display: "grid", justifyItems: "center", gap: 6 }}>
+                              <button
+                                type="button"
+                                onClick={() => openZoom(o.cierre_evidencia_url || "", "Después")}
+                                style={{
+                                  width: 120,
+                                  height: 120,
+                                  borderRadius: 14,
+                                  border: "1px solid rgba(14,165,233,0.45)",
+                                  background:
+                                    "linear-gradient(90deg, rgba(14,165,233,0.18) 0%, rgba(99,102,241,0.18) 50%, rgba(34,197,94,0.18) 100%)",
+                                  boxShadow: "0 8px 20px rgba(14,165,233,0.25)",
+                                  padding: 4,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  cursor: "zoom-in",
+                                }}
+                              >
+                                <img
+                                  src={o.cierre_evidencia_url}
+                                  alt="Después"
+                                  style={{
+                                    width: 108,
+                                    height: 108,
+                                    borderRadius: 10,
+                                    objectFit: "cover",
+                                    display: "block",
+                                  }}
+                                />
+                              </button>
+                              <div style={{ fontSize: 10, fontWeight: 900, color: "#16a34a" }}>DESPUÉS</div>
+                            </div>
                           )}
                         </div>
                       ) : (
@@ -777,6 +1076,7 @@ export default function ObservacionesPage() {
                           disabled={deletingId === o.id}
                           style={{
                             alignSelf: "flex-start",
+                            justifySelf: "start",
                             display: "inline-flex",
                             alignItems: "center",
                             gap: 6,
@@ -784,6 +1084,7 @@ export default function ObservacionesPage() {
                             border: "1px solid #ef4444",
                             background: "#ef4444",
                             color: "white",
+                            width: "fit-content",
                             padding: "4px 8px",
                             fontSize: 12,
                             fontWeight: 800,
@@ -814,11 +1115,18 @@ export default function ObservacionesPage() {
             alignItems: "center",
             justifyContent: "center",
             padding: 14,
-            zIndex: 60,
+            zIndex: 90,
           }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => setZoomTouchStartY(e.touches[0]?.clientY ?? null)}
+            onTouchEnd={(e) => {
+              if (zoomTouchStartY == null) return;
+              const endY = e.changedTouches[0]?.clientY ?? zoomTouchStartY;
+              if (endY - zoomTouchStartY > 80) closeZoom();
+              setZoomTouchStartY(null);
+            }}
             style={{
               width: "min(1100px, 96vw)",
               background: "white",
@@ -872,6 +1180,386 @@ export default function ObservacionesPage() {
         </div>
       )}
 
+      {/* Modal Nueva Observación */}
+      {newOpen && (
+        <div
+          onClick={() => !savingNew && !newUploading && setNewOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(2,6,23,0.65)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+            zIndex: 70,
+          }}
+          className={styles.modalOverlay}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{ width: "min(860px, 96vw)" }} className={styles.modalPanel}>
+            <div className={styles.card} role="dialog" aria-modal="true">
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <div style={{ fontWeight: 900, color: "#e2e8f0", fontSize: 18 }}>Nueva observación</div>
+                <div style={{ flex: 1 }} />
+                <button
+                  type="button"
+                  onClick={() => setNewOpen(false)}
+                  style={{
+                    padding: "8px 10px",
+                    borderRadius: 10,
+                    border: "1px solid rgba(148,163,184,0.45)",
+                    background: "rgba(15,23,42,0.8)",
+                    color: "#e2e8f0",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                  }}
+                >
+                  Cerrar
+                </button>
+              </div>
+
+              {perfilErr && <div className={styles.errorBox}>{perfilErr}</div>}
+              {newError && <div className={styles.errorBox}>{newError}</div>}
+
+              <form onSubmit={guardarNueva} className={styles.form}>
+                <div className={styles.twoCol}>
+                  <label className={styles.field}>
+                    <span className={styles.label}>Responsable (auto)</span>
+                    <input
+                      value={perfil?.nombre || ""}
+                      disabled
+                      className={`${styles.input} ${styles.disabled}`}
+                    />
+                  </label>
+
+                  <label className={styles.field}>
+                    <span className={styles.label}>Área</span>
+                    <select value={newArea} onChange={(e) => setNewArea(e.target.value)} className={styles.input}>
+                      {AREAS.map((a) => (
+                        <option key={a} value={a}>
+                          {a}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className={styles.twoCol}>
+                  <label className={styles.field}>
+                    <span className={styles.label}>Equipo / Lugar</span>
+                    <input
+                      ref={newEquipoRef}
+                      value={newEquipoLugar}
+                      onChange={(e) => setNewEquipoLugar(e.target.value)}
+                      placeholder="Ej: faja 8"
+                      className={`${styles.input} ${newInvalid.equipo ? styles.inputError : ""}`}
+                    />
+                  </label>
+
+                  <label className={styles.field}>
+                    <span className={styles.label}>Categoría</span>
+                    <select
+                      value={newCategoria}
+                      onChange={(e) => setNewCategoria(e.target.value as any)}
+                      className={styles.input}
+                    >
+                      {CATEGORIAS.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className={styles.twoCol}>
+                  <label className={styles.field}>
+                    <span className={styles.label}>Plazo</span>
+                    <input
+                      type="date"
+                      value={newPlazo}
+                      onChange={(e) => setNewPlazo(e.target.value)}
+                      className={`${styles.input} ${newInvalid.plazo ? styles.inputError : ""}`}
+                    />
+                  </label>
+                  <div className={styles.spacer} />
+                </div>
+
+                <label className={styles.field}>
+                  <span className={styles.label}>Descripción</span>
+                  <textarea
+                    value={newDescripcion}
+                    onChange={(e) => setNewDescripcion(e.target.value)}
+                    placeholder="Describe la observación..."
+                    rows={5}
+                    className={`${styles.input} ${styles.textarea} ${newInvalid.desc ? styles.inputError : ""}`}
+                  />
+                </label>
+
+                <div className={styles.evidenceBlock}>
+                  <div className={styles.evidenceTitle}>Evidencia (archivo opcional)</div>
+                  <div className={styles.fileRow}>
+                    <input
+                      id="evidencia-file-new"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setNewFile(e.target.files?.[0] || null)}
+                      className={styles.fileInput}
+                    />
+                    <label htmlFor="evidencia-file-new" className={styles.fileButton}>
+                      Seleccionar archivo
+                    </label>
+                    <span className={styles.fileName}>
+                      {newFile ? newFile.name : "Ningún archivo seleccionado"}
+                    </span>
+                  </div>
+                  <div className={styles.helperText}>
+                    Si subes una imagen, se guarda en Storage (bucket: <b>evidencias</b>) y se registra la URL.
+                  </div>
+                  {newUploadUrl && (
+                    <div className={styles.helperText}>
+                      ✅ URL generada:{" "}
+                      <a href={newUploadUrl} target="_blank" rel="noreferrer" className={styles.linkInline}>
+                        Ver
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                <div className={styles.modalActions}>
+                  <button
+                    type="button"
+                    onClick={() => setNewOpen(false)}
+                    disabled={savingNew || newUploading}
+                    style={{
+                      padding: "12px 16px",
+                      borderRadius: 12,
+                      border: "1px solid rgba(148,163,184,0.45)",
+                      background: "rgba(15,23,42,0.7)",
+                      color: "#e2e8f0",
+                      fontWeight: 800,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                  <button type="submit" disabled={!perfil || savingNew || newUploading} className={styles.submit}>
+                    {newUploading ? "Subiendo..." : savingNew ? "Guardando..." : "Guardar"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Editar Observación */}
+      {editOpen && editTarget && (
+        <div
+          onClick={() => !savingEdit && !editUploading && setEditOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(2,6,23,0.65)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+            zIndex: 70,
+          }}
+          className={styles.modalOverlay}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{ width: "min(860px, 96vw)" }} className={styles.modalPanel}>
+            <div className={styles.card} role="dialog" aria-modal="true">
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <div style={{ fontWeight: 900, color: "#e2e8f0", fontSize: 18 }}>Editar observación</div>
+                <div style={{ flex: 1 }} />
+                <button
+                  type="button"
+                  onClick={() => setEditOpen(false)}
+                  style={{
+                    padding: "8px 10px",
+                    borderRadius: 10,
+                    border: "1px solid rgba(148,163,184,0.45)",
+                    background: "rgba(15,23,42,0.8)",
+                    color: "#e2e8f0",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                  }}
+                >
+                  Cerrar
+                </button>
+              </div>
+
+              {editError && <div className={styles.errorBox}>{editError}</div>}
+              <form onSubmit={guardarEdicion} className={styles.form}>
+                <div className={styles.twoCol}>
+                  <label className={styles.field}>
+                    <span className={styles.label}>Responsable</span>
+                    <input
+                      value={editResponsable || perfil?.nombre || ""}
+                      disabled
+                      className={`${styles.input} ${styles.disabled}`}
+                    />
+                  </label>
+
+                  <label className={styles.field}>
+                    <span className={styles.label}>Área</span>
+                    <select value={editArea} onChange={(e) => setEditArea(e.target.value)} className={styles.input}>
+                      {AREAS.map((a) => (
+                        <option key={a} value={a}>
+                          {a}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className={styles.twoCol}>
+                  <label className={styles.field}>
+                    <span className={styles.label}>Equipo / Lugar</span>
+                    <input
+                      ref={editEquipoRef}
+                      value={editEquipoLugar}
+                      onChange={(e) => setEditEquipoLugar(e.target.value)}
+                      placeholder="Ej: faja 8"
+                      className={`${styles.input} ${editInvalid.equipo ? styles.inputError : ""}`}
+                    />
+                  </label>
+
+                  <label className={styles.field}>
+                    <span className={styles.label}>Categoría</span>
+                    <select
+                      value={editCategoria}
+                      onChange={(e) => setEditCategoria(e.target.value as any)}
+                      className={styles.input}
+                    >
+                      {CATEGORIAS.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className={styles.twoCol}>
+                  <label className={styles.field}>
+                    <span className={styles.label}>Plazo</span>
+                    <input
+                      type="date"
+                      value={editPlazo}
+                      onChange={(e) => setEditPlazo(e.target.value)}
+                      className={`${styles.input} ${editInvalid.plazo ? styles.inputError : ""}`}
+                    />
+                  </label>
+                  <div className={styles.spacer} />
+                </div>
+
+                <label className={styles.field}>
+                  <span className={styles.label}>Descripción</span>
+                  <textarea
+                    value={editDescripcion}
+                    onChange={(e) => setEditDescripcion(e.target.value)}
+                    placeholder="Describe la observación..."
+                    rows={5}
+                    className={`${styles.input} ${styles.textarea} ${editInvalid.desc ? styles.inputError : ""}`}
+                  />
+                </label>
+
+                <div className={styles.evidenceBlock}>
+                  <div className={styles.evidenceTitle}>Evidencia (archivo opcional)</div>
+                  {editCurrentUrl && (
+                    <div className={styles.helperText}>
+                      Actual:{" "}
+                      <a href={editCurrentUrl} target="_blank" rel="noreferrer" className={styles.linkInline}>
+                        Ver evidencia
+                      </a>
+                    </div>
+                  )}
+                  {editCurrentUrl && (
+                    <div style={{ marginTop: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => openZoom(editCurrentUrl || "", "Evidencia")}
+                        style={{
+                          border: "2px solid rgba(148,163,184,0.7)",
+                          borderRadius: 10,
+                          padding: 4,
+                          background: "rgba(15,23,42,0.45)",
+                          cursor: "zoom-in",
+                          display: "inline-flex",
+                        }}
+                      >
+                        <img
+                          src={editCurrentUrl}
+                          alt="Evidencia actual"
+                          style={{
+                            width: 120,
+                            height: 120,
+                            objectFit: "cover",
+                            borderRadius: 8,
+                          }}
+                        />
+                      </button>
+                    </div>
+                  )}
+
+                  <div className={styles.fileRow}>
+                    <input
+                      id="evidencia-file-edit"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setEditFile(e.target.files?.[0] || null)}
+                      className={styles.fileInput}
+                    />
+                    <label htmlFor="evidencia-file-edit" className={styles.fileButton}>
+                      Seleccionar archivo
+                    </label>
+                    <span className={styles.fileName}>
+                      {editFile ? editFile.name : "Ningún archivo seleccionado"}
+                    </span>
+                  </div>
+                  <div className={styles.helperText}>
+                    Si subes una imagen, se guarda en Storage (bucket: <b>evidencias</b>) y se actualiza la URL.
+                  </div>
+                  {editUploadUrl && (
+                    <div className={styles.helperText}>
+                      ✅ URL generada:{" "}
+                      <a href={editUploadUrl} target="_blank" rel="noreferrer" className={styles.linkInline}>
+                        Ver
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                <div className={styles.modalActions}>
+                  <button
+                    type="button"
+                    onClick={() => setEditOpen(false)}
+                    disabled={savingEdit || editUploading}
+                    style={{
+                      padding: "12px 16px",
+                      borderRadius: 12,
+                      border: "1px solid rgba(148,163,184,0.45)",
+                      background: "rgba(15,23,42,0.7)",
+                      color: "#e2e8f0",
+                      fontWeight: 800,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                  <button type="submit" disabled={savingEdit || editUploading} className={styles.submit}>
+                    {editUploading ? "Subiendo..." : savingEdit ? "Guardando..." : "Guardar cambios"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal Cierre */}
       {closeOpen && (
         <div
@@ -879,121 +1567,119 @@ export default function ObservacionesPage() {
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(0,0,0,0.35)",
+            background: "rgba(2,6,23,0.65)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            padding: 14,
-            zIndex: 50,
+            padding: 16,
+            zIndex: 70,
           }}
+          className={styles.modalOverlay}
         >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              width: "min(680px, 100%)",
-              background: "white",
-              borderRadius: 16,
-              border: "1px solid #e5e7eb",
-              boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
-              overflow: "hidden",
-            }}
-          >
-            <div style={{ padding: 14, borderBottom: "1px solid #e5e7eb", fontWeight: 900 }}>
-              Cerrar observación (evidencia obligatoria)
-            </div>
-
-            <div style={{ padding: 14, display: "grid", gap: 10 }}>
-              <div style={{ fontSize: 12, color: "#6b7280" }}>
-                {closeTarget ? (
-                  <>
-                    <b>{closeTarget.area}</b> — {closeTarget.descripcion}
-                  </>
-                ) : null}
-              </div>
-
-              <label style={{ fontSize: 12, fontWeight: 800 }}>Descripción del trabajo realizado *</label>
-              <textarea
-                value={closeDesc}
-                onChange={(e) => setCloseDesc(e.target.value)}
-                placeholder="Ej: Se instaló guarda, se ajustó pernos, se limpió..."
-                rows={4}
-                style={{
-                  width: "100%",
-                  border: "1px solid #d1d5db",
-                  borderRadius: 12,
-                  padding: 12,
-                  outline: "none",
-                }}
-              />
-
-              <div style={{ display: "grid", gap: 6 }}>
-                <label style={{ fontSize: 12, fontWeight: 800 }}>Evidencia (sube archivo) *</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setCloseFile(e.target.files?.[0] ?? null)}
-                />
-                <div style={{ fontSize: 12, color: "#6b7280" }}>
-                  Si subes imagen, se guarda en Storage (bucket: <b>evidencias</b>) y se registra la URL.
+          <div onClick={(e) => e.stopPropagation()} style={{ width: "min(760px, 96vw)" }} className={styles.modalPanel}>
+            <div className={styles.card} role="dialog" aria-modal="true">
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <div style={{ fontWeight: 900, color: "#e2e8f0", fontSize: 18 }}>
+                  Cerrar observación (evidencia obligatoria)
                 </div>
-              </div>
-
-              <div style={{ display: "grid", gap: 6 }}>
-                <label style={{ fontSize: 12, fontWeight: 800 }}>o pega URL (si no subirás archivo)</label>
-                <input
-                  value={closeUrl}
-                  onChange={(e) => setCloseUrl(e.target.value)}
-                  placeholder="https://..."
+                <div style={{ flex: 1 }} />
+                <button
+                  type="button"
+                  onClick={() => setCloseOpen(false)}
                   style={{
-                    width: "100%",
-                    border: "1px solid #d1d5db",
-                    borderRadius: 12,
-                    padding: 12,
-                    outline: "none",
+                    padding: "8px 10px",
+                    borderRadius: 10,
+                    border: "1px solid rgba(148,163,184,0.45)",
+                    background: "rgba(15,23,42,0.8)",
+                    color: "#e2e8f0",
+                    fontWeight: 800,
+                    cursor: "pointer",
                   }}
-                />
+                >
+                  Cerrar
+                </button>
               </div>
-            </div>
 
-            <div
-              style={{
-                padding: 14,
-                borderTop: "1px solid #e5e7eb",
-                display: "flex",
-                gap: 10,
-                justifyContent: "flex-end",
-              }}
-            >
-              <button
-                disabled={savingClose}
-                onClick={() => setCloseOpen(false)}
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: 10,
-                  border: "1px solid #d1d5db",
-                  background: "white",
-                  fontWeight: 900,
-                  cursor: savingClose ? "not-allowed" : "pointer",
-                }}
-              >
-                Cancelar
-              </button>
+              {closeError && <div className={styles.errorBox}>{closeError}</div>}
+              <form onSubmit={(e) => e.preventDefault()} className={styles.form}>
+                <div className={styles.helperText}>
+                  {closeTarget ? (
+                    <>
+                      <b>{closeTarget.area}</b> — {closeTarget.descripcion}
+                    </>
+                  ) : null}
+                </div>
 
-              <button
-                disabled={savingClose}
-                onClick={confirmarCierre}
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: 10,
-                  border: "1px solid #15803d",
-                  background: "#16a34a",
-                  color: "white",
-                  fontWeight: 900,
-                  cursor: savingClose ? "not-allowed" : "pointer",
-                }}
-              >
-                {savingClose ? "Cerrando..." : "✅ Confirmar cierre"}
-              </button>
+                <label className={styles.field}>
+                  <span className={styles.label}>Descripción del trabajo realizado *</span>
+                  <textarea
+                    ref={closeDescRef}
+                    value={closeDesc}
+                    onChange={(e) => setCloseDesc(e.target.value)}
+                    placeholder="Ej: Se instaló guarda, se ajustó pernos, se limpió..."
+                    rows={4}
+                    className={`${styles.input} ${styles.textarea} ${closeInvalid.desc ? styles.inputError : ""}`}
+                  />
+                </label>
+
+                <div
+                  className={`${styles.evidenceBlock} ${closeInvalid.evidencia ? styles.inputErrorBlock : ""}`}
+                >
+                  <div className={styles.evidenceTitle}>Evidencia (archivo o URL) *</div>
+                  <div className={styles.fileRow}>
+                  <input
+                    id="evidencia-file-close"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setCloseFile(e.target.files?.[0] ?? null)}
+                    className={styles.fileInput}
+                  />
+                    <label htmlFor="evidencia-file-close" className={styles.fileButton}>
+                      Seleccionar archivo
+                    </label>
+                    <span className={styles.fileName}>
+                      {closeFile ? closeFile.name : "Ningún archivo seleccionado"}
+                    </span>
+                  </div>
+
+                  <div className={styles.helperText}>
+                    Si subes imagen, se guarda en Storage (bucket: <b>evidencias</b>) y se registra la URL.
+                  </div>
+
+                  <label className={styles.field}>
+                    <span className={styles.label}>o pega URL (si no subirás archivo)</span>
+                  <input
+                    value={closeUrl}
+                    onChange={(e) => setCloseUrl(e.target.value)}
+                    placeholder="https://..."
+                    className={`${styles.input} ${closeInvalid.evidencia ? styles.inputError : ""}`}
+                  />
+                </label>
+              </div>
+
+                <div className={styles.modalActions}>
+                  <button
+                    type="button"
+                    disabled={savingClose}
+                    onClick={() => setCloseOpen(false)}
+                    style={{
+                      padding: "12px 16px",
+                      borderRadius: 12,
+                      border: "1px solid rgba(148,163,184,0.45)",
+                      background: "rgba(15,23,42,0.7)",
+                      color: "#e2e8f0",
+                      fontWeight: 800,
+                      cursor: savingClose ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    Cancelar
+                  </button>
+
+                  <button type="button" disabled={savingClose} onClick={confirmarCierre} className={styles.submit}>
+                    {savingClose ? "Cerrando..." : "✅ Confirmar cierre"}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
@@ -1001,6 +1687,9 @@ export default function ObservacionesPage() {
     </div>
   );
 }
+
+
+
 
 
 

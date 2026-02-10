@@ -97,6 +97,11 @@
   background: rgba(15, 23, 42, 0.75);
 }
 
+.inputError {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+}
+
 .textarea {
   min-height: 140px;
   resize: vertical;
@@ -114,6 +119,11 @@
   background: rgba(15, 23, 42, 0.45);
   display: grid;
   gap: 8px;
+}
+
+.inputErrorBlock {
+  border-color: rgba(239, 68, 68, 0.8);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
 }
 
 .evidenceTitle {
@@ -223,6 +233,41 @@
   display: none;
 }
 
+.modalOverlay {
+  animation: modalFade 0.18s ease;
+}
+
+.modalPanel {
+  animation: modalPop 0.2s ease;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+@keyframes modalFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalPop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @media (min-width: 900px) {
   .twoCol {
     grid-template-columns: 1fr 1fr;
@@ -230,5 +275,20 @@
 
   .spacer {
     display: block;
+  }
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .submit {
+    width: 100%;
+  }
+
+  .modalActions button {
+    width: 100%;
   }
 }
