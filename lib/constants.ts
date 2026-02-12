@@ -1,14 +1,14 @@
 export const AREAS = [
-  "chancado",
-  "molienda",
-  "remolienda",
-  "flotacion pb",
-  "flotacion zn",
-  "filtro pb",
-  "filtro zn",
-  "reactivos",
-  "galpon zn",
-  "galpon pb",
+  "Chancado",
+  "Molienda",
+  "Remolienda",
+  "Flotacion pb",
+  "Flotacion zn",
+  "Filtro pb",
+  "Filtro zn",
+  "Reactivos",
+  "Galpon zn",
+  "Galpon pb",
 ] as const;
 
 export const CATEGORIAS = ["bajo", "medio", "alto"] as const;

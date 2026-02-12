@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 type Obs = {
@@ -121,6 +121,10 @@ function Pill({
 }
 
 export default function PublicoPage() {
+  const router = useRouter();
+  const params = useSearchParams();
+  const nextUrl = useMemo(() => params.get("next") || "/observaciones", [params]);
+
   const [data, setData] = useState<Obs[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -128,6 +132,12 @@ export default function PublicoPage() {
   const [zoomUrl, setZoomUrl] = useState<string | null>(null);
   const [zoomLabel, setZoomLabel] = useState<string>("");
   const [zoomTouchStartY, setZoomTouchStartY] = useState<number | null>(null);
+
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [loginDni, setLoginDni] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginErr, setLoginErr] = useState<string | null>(null);
 
   const pendientes = useMemo(() => data.filter((d) => d.estado === "pendiente"), [data]);
   const cerradas = useMemo(() => data.filter((d) => d.estado === "cerrada"), [data]);
@@ -154,6 +164,10 @@ export default function PublicoPage() {
     load();
   }, []);
 
+  useEffect(() => {
+    if (params.get("login") === "1") setLoginOpen(true);
+  }, [params]);
+
   function openZoom(url: string, label: string) {
     setZoomUrl(url);
     setZoomLabel(label || "Evidencia");
@@ -166,7 +180,48 @@ export default function PublicoPage() {
     setZoomLabel("");
   }
 
-  const pageBg = "transparent";
+  function openLogin() {
+    setLoginErr(null);
+    setLoginOpen(true);
+  }
+
+  function closeLogin() {
+    setLoginOpen(false);
+  }
+
+  async function onSubmitLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setLoginErr(null);
+
+    if (!loginDni.trim() || !loginPassword) {
+      setLoginErr("Completa DNI y contraseña.");
+      return;
+    }
+
+    setLoginLoading(true);
+    try {
+      const email = `${loginDni.trim()}@observaciones.local`;
+      const { error } = await supabase.auth.signInWithPassword({ email, password: loginPassword });
+
+      if (error) {
+        setLoginErr(
+          error.message.includes("Invalid login credentials")
+            ? "Credenciales incorrectas."
+            : `Error: ${error.message}`
+        );
+        return;
+      }
+
+      await supabase.auth.getSession();
+      router.replace(nextUrl);
+      router.refresh();
+    } finally {
+      setLoginLoading(false);
+    }
+  }
+
+  const pageBg =
+    'url("https://whxeijdmxfteizyabtwi.supabase.co/storage/v1/object/public/assets/fondos/cerro%205.jpg")';
   const cardBg = "white";
 
   if (loading) {
@@ -189,7 +244,17 @@ export default function PublicoPage() {
   }
 
   return (
-    <div style={{ background: pageBg, minHeight: "100vh", padding: 16 }}>
+    <div
+      style={{
+        background: pageBg,
+        minHeight: "100vh",
+        padding: 16,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        backgroundAttachment: "fixed",
+      }}
+    >
       <div
         style={{
           maxWidth: 1100,
@@ -294,8 +359,8 @@ export default function PublicoPage() {
         />
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Link
-            href="/login"
+          <button
+            onClick={openLogin}
             style={{
               padding: "10px 16px",
               borderRadius: 999,
@@ -310,10 +375,11 @@ export default function PublicoPage() {
               display: "inline-flex",
               alignItems: "center",
               gap: 8,
+              cursor: "pointer",
             }}
           >
             &#128274; Iniciar sesi&oacute;n
-          </Link>
+          </button>
 
           <button
             onClick={load}
@@ -340,18 +406,21 @@ export default function PublicoPage() {
         {/* Pendientes */}
         <div
           style={{
-            background: "white",
-            border: "1px solid #e5e7eb",
+            background: "rgba(15, 23, 42, 0.35)",
+            border: "1px solid rgba(148, 163, 184, 0.45)",
             borderRadius: 14,
             padding: 14,
+            boxShadow: "0 20px 50px rgba(2, 6, 23, 0.35)",
+            backdropFilter: "blur(8px)",
+            outline: "1px solid rgba(148, 163, 184, 0.15)",
           }}
         >
-          <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 10 }}>
+          <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 10, color: "#e2e8f0" }}>
             Pendientes ({pendientes.length})
           </div>
 
           {pendientes.length === 0 ? (
-            <div style={{ color: "#6b7280", fontSize: 13 }}>No hay pendientes.</div>
+            <div style={{ color: "#cbd5f5", fontSize: 13 }}>No hay pendientes.</div>
           ) : (
             <div style={{ display: "grid", gap: 12 }}>
               {pendientes.map((o) => {
@@ -362,11 +431,11 @@ export default function PublicoPage() {
                   <div
                     key={o.id}
                     style={{
-                      border: `2px solid ${getRiesgoColor(o.categoria)}`,
-                      borderRadius: 14,
-                      padding: 14,
-                      background: "#ffffff",
-                      boxShadow: "0 8px 18px rgba(0,0,0,0.08)",
+                      border: `1px solid ${getRiesgoColor(o.categoria)}`,
+                      borderRadius: 16,
+                      padding: 16,
+                      background: "linear-gradient(180deg, #DCE6F2 0%, #C9D6E6 100%)",
+                      boxShadow: "0 6px 16px rgba(15,23,42,0.08)",
                     }}
                   >
                     <div
@@ -452,29 +521,32 @@ export default function PublicoPage() {
         {/* Cerradas */}
         <div
           style={{
-            background: "white",
-            border: "1px solid #e5e7eb",
+            background: "rgba(15, 23, 42, 0.35)",
+            border: "1px solid rgba(148, 163, 184, 0.45)",
             borderRadius: 14,
             padding: 14,
+            boxShadow: "0 20px 50px rgba(2, 6, 23, 0.35)",
+            backdropFilter: "blur(8px)",
+            outline: "1px solid rgba(148, 163, 184, 0.15)",
           }}
         >
-          <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 10 }}>
+          <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 10, color: "#e2e8f0" }}>
             Cerradas ({cerradas.length})
           </div>
 
           {cerradas.length === 0 ? (
-            <div style={{ color: "#6b7280", fontSize: 13 }}>A&uacute;n no hay cerradas.</div>
+            <div style={{ color: "#cbd5f5", fontSize: 13 }}>A&uacute;n no hay cerradas.</div>
           ) : (
             <div style={{ display: "grid", gap: 12 }}>
               {cerradas.map((o) => (
                 <div
                   key={o.id}
                   style={{
-                    border: `2px solid ${getRiesgoColor(o.categoria)}`,
-                    borderRadius: 14,
-                    padding: 14,
-                    background: "#ffffff",
-                    boxShadow: "0 8px 18px rgba(0,0,0,0.08)",
+                    border: `1px solid ${getRiesgoColor(o.categoria)}`,
+                    borderRadius: 16,
+                    padding: 16,
+                    background: "linear-gradient(180deg, #DCE6F2 0%, #C9D6E6 100%)",
+                    boxShadow: "0 6px 16px rgba(15,23,42,0.08)",
                   }}
                 >
                   <div
@@ -738,6 +810,124 @@ export default function PublicoPage() {
                 }}
               />
             </div>
+          </div>
+        </div>
+      )}
+
+      {loginOpen && (
+        <div
+          onClick={closeLogin}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(2,6,23,0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 14,
+            zIndex: 70,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "min(460px, 94vw)",
+              border: "1px solid rgba(34,197,94,0.35)",
+              borderRadius: 18,
+              padding: 18,
+              backgroundImage:
+                'linear-gradient(rgba(2,6,23,0.55), rgba(2,6,23,0.55)), url("https://whxeijdmxfteizyabtwi.supabase.co/storage/v1/object/public/assets/fondos/fodo%2001.jpg")',
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              boxShadow: "0 18px 40px rgba(2,6,23,0.45)",
+              color: "#e2e8f0",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <h1 style={{ margin: "4px 0 0", fontSize: 22, color: "#e2e8f0" }}>Ingresar</h1>
+              <div style={{ flex: 1 }} />
+              <button
+                onClick={closeLogin}
+                style={{
+                  padding: "6px 10px",
+                  borderRadius: 10,
+                  border: "1px solid rgba(148,163,184,0.4)",
+                  background: "rgba(15,23,42,0.7)",
+                  color: "#e2e8f0",
+                  fontWeight: 800,
+                  cursor: "pointer",
+                }}
+              >
+                Cerrar
+              </button>
+            </div>
+            <p style={{ marginTop: 6, opacity: 0.85, color: "#cbd5f5" }}>DNI + contrase&ntilde;a</p>
+
+            <form onSubmit={onSubmitLogin} style={{ display: "grid", gap: 12, marginTop: 14 }}>
+              <label style={{ display: "grid", gap: 6 }}>
+                <span style={{ color: "#e2e8f0", fontWeight: 700 }}>DNI</span>
+                <input
+                  value={loginDni}
+                  onChange={(e) => setLoginDni(e.target.value)}
+                  placeholder="60615625"
+                  inputMode="numeric"
+                  style={{
+                    padding: 12,
+                    borderRadius: 12,
+                    border: "1px solid rgba(148,163,184,0.4)",
+                    background: "rgba(15,23,42,0.7)",
+                    color: "#e2e8f0",
+                    outline: "none",
+                  }}
+                />
+              </label>
+
+              <label style={{ display: "grid", gap: 6 }}>
+                <span style={{ color: "#e2e8f0", fontWeight: 700 }}>Contrase&ntilde;a</span>
+                <input
+                  type="password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  style={{
+                    padding: 12,
+                    borderRadius: 12,
+                    border: "1px solid rgba(148,163,184,0.4)",
+                    background: "rgba(15,23,42,0.7)",
+                    color: "#e2e8f0",
+                    outline: "none",
+                  }}
+                />
+              </label>
+
+              {loginErr && (
+                <div
+                  style={{
+                    padding: 10,
+                    border: "1px solid #ef4444",
+                    borderRadius: 10,
+                    color: "#b91c1c",
+                    background: "#fff5f5",
+                  }}
+                >
+                  {loginErr}
+                </div>
+              )}
+
+              <button
+                disabled={loginLoading}
+                style={{
+                  padding: 12,
+                  borderRadius: 12,
+                  border: "1px solid rgba(34,197,94,0.6)",
+                  background: "linear-gradient(135deg, #22c55e, #0ea5e9)",
+                  color: "#0b1220",
+                  fontWeight: 900,
+                  cursor: loginLoading ? "not-allowed" : "pointer",
+                }}
+              >
+                {loginLoading ? "Ingresando..." : "Ingresar"}
+              </button>
+            </form>
           </div>
         </div>
       )}

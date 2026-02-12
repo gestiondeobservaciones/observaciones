@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { AREAS, CATEGORIAS } from "@/lib/constants";
 import styles from "./page.module.css";
@@ -47,6 +48,42 @@ function formatPct(v: number) {
   return `${(v * 100).toFixed(1)}%`;
 }
 
+function normalizeAreaKey(value?: string | null) {
+  const raw = (value || "sin area").trim().replace(/\s+/g, " ");
+  return raw.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+function formatAreaLabel(value?: string | null) {
+  const raw = (value || "Sin area").trim().replace(/\s+/g, " ");
+  if (!raw) return "Sin area";
+  return raw
+    .split(" ")
+    .map((w) => {
+      const lw = w.toLowerCase();
+      if (lw === "zn" || lw === "pb") return lw.toUpperCase();
+      if (/^\d+$/.test(w)) return w;
+      return lw.charAt(0).toUpperCase() + lw.slice(1);
+    })
+    .join(" ");
+}
+
+function normalizeUserKey(value?: string | null) {
+  const raw = (value || "desconocido").trim().replace(/\s+/g, " ");
+  return raw.toLowerCase();
+}
+
+function formatUserLabel(value?: string | null) {
+  const raw = (value || "Desconocido").trim().replace(/\s+/g, " ");
+  if (!raw) return "Desconocido";
+  if (/^[0-9a-f-]{20,}$/i.test(raw)) return `Usuario ${raw.slice(0, 6)}`;
+  const source = (raw.includes("@") ? raw.split("@")[0] : raw).replace(/[._-]+/g, " ");
+  return source
+    .split(" ")
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+}
+
 function downloadCsv(name: string, rows: Array<Array<string | number>>) {
   const text = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
   const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
@@ -58,7 +95,12 @@ function downloadCsv(name: string, rows: Array<Array<string | number>>) {
   URL.revokeObjectURL(url);
 }
 
-async function exportSvgToPng(svgId: string, name: string) {
+async function exportSvgToPng(
+  svgId: string,
+  name: string,
+  summaryLines: string[] = [],
+  title = "",
+) {
   const svg = document.getElementById(svgId) as SVGSVGElement | null;
   if (!svg) return;
   const clone = svg.cloneNode(true) as SVGSVGElement;
@@ -68,13 +110,34 @@ async function exportSvgToPng(svgId: string, name: string) {
   const img = new Image();
   img.onload = () => {
     const canvas = document.createElement("canvas");
-    canvas.width = svg.viewBox.baseVal.width || svg.clientWidth || 800;
-    canvas.height = svg.viewBox.baseVal.height || svg.clientHeight || 400;
+    const baseWidth = svg.viewBox.baseVal.width || svg.clientWidth || 800;
+    const baseHeight = svg.viewBox.baseVal.height || svg.clientHeight || 400;
+    const extraTop = title ? 46 : 0;
+    const extraBottom = summaryLines.length ? 66 : 0;
+    canvas.width = baseWidth;
+    canvas.height = baseHeight + extraTop + extraBottom;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.fillStyle = "#0b1220";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0);
+    if (title) {
+      ctx.fillStyle = "#e2e8f0";
+      ctx.font = 'bold 20px "Segoe UI", sans-serif';
+      ctx.textAlign = "center";
+      ctx.fillText(title, Math.floor(baseWidth / 2), 30);
+      ctx.textAlign = "start";
+    }
+
+    ctx.drawImage(img, 0, extraTop);
+    if (summaryLines.length) {
+      ctx.fillStyle = "rgba(15,23,42,0.9)";
+      ctx.fillRect(0, extraTop + baseHeight, baseWidth, extraBottom);
+      ctx.fillStyle = "#cbd5f5";
+      ctx.font = '15px "Segoe UI", sans-serif';
+      summaryLines.slice(0, 2).forEach((line, i) => {
+        ctx.fillText(line, 14, extraTop + baseHeight + 24 + i * 24);
+      });
+    }
     const a = document.createElement("a");
     a.href = canvas.toDataURL("image/png");
     a.download = name;
@@ -85,6 +148,7 @@ async function exportSvgToPng(svgId: string, name: string) {
 
 export default function DashboardPage() {
   const [data, setData] = useState<Obs[]>([]);
+  const [userNameByKey, setUserNameByKey] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   const [from, setFrom] = useState("");
@@ -101,6 +165,22 @@ export default function DashboardPage() {
       .from("observaciones")
       .select("id,estado,area,categoria,responsable,creado_por,creado_en,cerrado_por,cerrado_en");
     if (!error && data) setData(data as Obs[]);
+
+    // Mapeo userId/email/dni -> nombre para mostrar nombres en ejes/leyendas.
+    const { data: usuarios } = await supabase.from("usuarios").select("id,email,dni,nombre");
+    const map: Record<string, string> = {};
+    for (const u of usuarios ?? []) {
+      const nombre = formatUserLabel((u as any)?.nombre || (u as any)?.email || (u as any)?.id || "Desconocido");
+      if ((u as any)?.id) map[normalizeUserKey((u as any).id)] = nombre;
+      if ((u as any)?.email) map[normalizeUserKey((u as any).email)] = nombre;
+      if ((u as any)?.dni) {
+        const dni = String((u as any).dni).trim();
+        map[normalizeUserKey(dni)] = nombre;
+        map[normalizeUserKey(`${dni}@observaciones.local`)] = nombre;
+      }
+    }
+    setUserNameByKey(map);
+
     setLoading(false);
   }
 
@@ -123,33 +203,57 @@ export default function DashboardPage() {
   const totalCount = filtered.length;
 
   const usersBars = useMemo(() => {
-    const created: Record<string, number> = {};
-    const closed: Record<string, number> = {};
+    const createdByKey: Record<string, number> = {};
+    const closedByKey: Record<string, number> = {};
+    const labelByKey: Record<string, string> = {};
+
     for (const o of filtered) {
-      const u = o.creado_por || "desconocido";
-      created[u] = (created[u] || 0) + 1;
-      if (o.cerrado_por) closed[o.cerrado_por] = (closed[o.cerrado_por] || 0) + 1;
+      const ck = normalizeUserKey(o.creado_por);
+      if (!labelByKey[ck]) {
+        labelByKey[ck] = userNameByKey[ck] || formatUserLabel(o.responsable) || formatUserLabel(o.creado_por);
+      }
+      createdByKey[ck] = (createdByKey[ck] || 0) + 1;
+
+      if (o.cerrado_por) {
+        const zk = normalizeUserKey(o.cerrado_por);
+        if (!labelByKey[zk]) labelByKey[zk] = userNameByKey[zk] || formatUserLabel(o.cerrado_por);
+        closedByKey[zk] = (closedByKey[zk] || 0) + 1;
+      }
     }
-    const keys = Array.from(new Set([...Object.keys(created), ...Object.keys(closed)]));
-    const items = keys.map((k) => ({
-      user: k,
-      created: created[k] || 0,
-      closed: closed[k] || 0,
-    }));
-    items.sort((a, b) => Math.max(b.created, b.closed) - Math.max(a.created, a.closed));
+
+    // Consolidar por nombre final para evitar duplicados del mismo usuario por id/email/dni distintos.
+    const groupedByName: Record<string, { user: string; created: number; closed: number }> = {};
+    const keys = Array.from(new Set([...Object.keys(createdByKey), ...Object.keys(closedByKey)]));
+    for (const k of keys) {
+      const label = labelByKey[k] || "Desconocido";
+      const nameKey = normalizeUserKey(label);
+      if (!groupedByName[nameKey]) {
+        groupedByName[nameKey] = { user: label, created: 0, closed: 0 };
+      }
+      groupedByName[nameKey].created += createdByKey[k] || 0;
+      groupedByName[nameKey].closed += closedByKey[k] || 0;
+    }
+
+    const items = Object.values(groupedByName);
+    items.sort((a, b) => b.created + b.closed - (a.created + a.closed));
     return items.slice(0, Math.max(1, topN));
-  }, [filtered, topN]);
+  }, [filtered, topN, userNameByKey]);
 
   const areaPie = useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const a of AREAS) map[a] = 0;
-    for (const o of filtered) map[o.area] = (map[o.area] || 0) + 1;
-    const total = Object.values(map).reduce((s, v) => s + v, 0);
-    const entries = Object.entries(map).sort((a, b) => b[1] - a[1]);
+    const grouped: Record<string, { label: string; total: number }> = {};
+    for (const o of filtered) {
+      const key = normalizeAreaKey(o.area);
+      if (!grouped[key]) grouped[key] = { label: formatAreaLabel(o.area), total: 0 };
+      grouped[key].total += 1;
+    }
+    const entries = Object.values(grouped)
+      .map((g) => [g.label, g.total] as [string, number])
+      .sort((a, b) => b[1] - a[1]);
+    const total = entries.reduce((s, [, v]) => s + v, 0);
     const top = entries.filter(([, v]) => v > 0).slice(0, Math.max(1, topN));
     const topSum = top.reduce((s, [, v]) => s + v, 0);
     const others = Math.max(0, total - topSum);
-    return { map, total, entries, top, others };
+    return { total, entries, top, others };
   }, [filtered, topN]);
 
   const series = useMemo(() => {
@@ -202,6 +306,9 @@ export default function DashboardPage() {
           <p>Vista dinámica con filtros globales y exportación por gráfico.</p>
         </div>
         <div className={styles.headerActions}>
+          <Link className={styles.headerLink} href="/observaciones">
+            Regresar
+          </Link>
           <button className={styles.ghost} onClick={load}>
             Recargar
           </button>
@@ -291,7 +398,22 @@ export default function DashboardPage() {
                 <span>Top areas con mas observaciones</span>
               </div>
               <div className={styles.exportButtons}>
-                <button onClick={() => exportSvgToPng("chart-areas", "areas.png")}>PNG</button>
+                <button
+                  onClick={() => {
+                    const topArea = areaPie.top[0];
+                    exportSvgToPng(
+                      "chart-areas",
+                      "areas.png",
+                      [
+                      `Total observaciones: ${areaPie.total}`,
+                      topArea ? `Area con mas observaciones: ${topArea[0]} (${topArea[1]})` : "Area con mas observaciones: Sin datos",
+                      ],
+                      "GRAFICA DE DISTRIBUCION POR AREA",
+                    );
+                  }}
+                >
+                  PNG
+                </button>
                 <button
                   onClick={() =>
                     downloadCsv("areas.csv", [
@@ -307,17 +429,11 @@ export default function DashboardPage() {
                 </button>
               </div>
             </div>
-            <svg id="chart-areas" viewBox="0 0 640 300" className={styles.chartSvg}>
-              <defs>
-                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="0" dy="8" stdDeviation="8" floodColor="#000" floodOpacity="0.35" />
-                </filter>
-              </defs>
+            <svg id="chart-areas" viewBox="0 0 640 360" className={styles.chartSvg}>
               {(() => {
-                const cx = 220;
-                const cy = 150;
-                const r = 100;
-                const r2 = 56;
+                const cx = 270;
+                const cy = 180;
+                const r = 138;
                 const total = Math.max(1, areaPie.total);
                 const base = areaPie.top.map(([k, v]) => ({ k, v }));
                 const slices = areaPie.others ? [...base, { k: "Otros", v: areaPie.others }] : base;
@@ -325,64 +441,44 @@ export default function DashboardPage() {
                 let start = -Math.PI / 2;
                 return (
                   <>
-                    <g filter="url(#shadow)">
-                      {slices.map((slice, idx) => {
-                        const { k: area, v } = slice;
-                        const ang = (v / total) * Math.PI * 2;
-                        const end = start + ang;
-                        const large = ang > Math.PI ? 1 : 0;
-                        const x1 = cx + r * Math.cos(start);
-                        const y1 = cy + r * Math.sin(start) + 10;
-                        const x2 = cx + r * Math.cos(end);
-                        const y2 = cy + r * Math.sin(end) + 10;
-                        const x3 = cx + r2 * Math.cos(end);
-                        const y3 = cy + r2 * Math.sin(end) + 10;
-                        const x4 = cx + r2 * Math.cos(start);
-                        const y4 = cy + r2 * Math.sin(start) + 10;
-                        const d = `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} L ${x3} ${y3} A ${r2} ${r2} 0 ${large} 0 ${x4} ${y4} Z`;
-                        start = end;
-                        return <path key={area + "shadow"} d={d} fill="#0f172a" opacity="0.35" />;
-                      })}
-                    </g>
-                    {(() => {
-                      let s = -Math.PI / 2;
-                      return slices.map((slice, idx) => {
-                        const { k: area, v } = slice;
-                        const ang = (v / total) * Math.PI * 2;
-                        const end = s + ang;
-                        const large = ang > Math.PI ? 1 : 0;
-                        const x1 = cx + r * Math.cos(s);
-                        const y1 = cy + r * Math.sin(s);
-                        const x2 = cx + r * Math.cos(end);
-                        const y2 = cy + r * Math.sin(end);
-                        const x3 = cx + r2 * Math.cos(end);
-                        const y3 = cy + r2 * Math.sin(end);
-                        const x4 = cx + r2 * Math.cos(s);
-                        const y4 = cy + r2 * Math.sin(s);
-                        const d = `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} L ${x3} ${y3} A ${r2} ${r2} 0 ${large} 0 ${x4} ${y4} Z`;
-                        const mid = s + ang / 2;
-                        const lx = cx + (r + 18) * Math.cos(mid);
-                        const ly = cy + (r + 18) * Math.sin(mid);
-                        const pct = v / total;
-                        s = end;
-                        return (
-                          <g key={area}>
-                            <path d={d} fill={colors[idx % colors.length]}>
-                              <title>
-                                {area}
-Total: {v}
-%: {formatPct(pct)}
-                              </title>
-                            </path>
-                            {v > 0 && (
-                              <text x={lx} y={ly} fontSize="10" fill="#e2e8f0" textAnchor="middle">
-                                {Math.round(pct * 100)}%
-                              </text>
-                            )}
-                          </g>
-                        );
-                      });
-                    })()}
+                    {slices.map((slice, idx) => {
+                      const { k, v } = slice;
+                      const ang = (v / total) * Math.PI * 2;
+                      const end = start + ang;
+                      const large = ang > Math.PI ? 1 : 0;
+                      const mid = start + ang / 2;
+
+                      // efecto "exploded pie": cada porción sale un poco del centro
+                      const ox = Math.cos(mid) * 8;
+                      const oy = Math.sin(mid) * 8;
+                      const x1 = cx + ox + r * Math.cos(start);
+                      const y1 = cy + oy + r * Math.sin(start);
+                      const x2 = cx + ox + r * Math.cos(end);
+                      const y2 = cy + oy + r * Math.sin(end);
+                      const d = `M ${cx + ox} ${cy + oy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`;
+
+                      const label = k.charAt(0).toUpperCase() + k.slice(1);
+                      const tx = cx + (r + 36) * Math.cos(mid);
+                      const ty = cy + (r + 36) * Math.sin(mid);
+                      start = end;
+
+                      return (
+                        <g key={k}>
+                          <path d={d} fill={colors[idx % colors.length]} stroke="#0b1220" strokeWidth="1.5">
+                            <title>
+                              {label}
+Observaciones: {v}
+                            </title>
+                          </path>
+                          <text x={tx} y={ty - 5} fontSize="16" fill="#e2e8f0" textAnchor="middle" fontWeight="700">
+                            {label}
+                          </text>
+                          <text x={tx} y={ty + 16} fontSize="15" fill="#cbd5f5" textAnchor="middle">
+                            {v}
+                          </text>
+                        </g>
+                      );
+                    })}
                   </>
                 );
               })()}
@@ -395,12 +491,12 @@ Total: {v}
                       background: ["#4B8BBE", "#306998", "#FFE873", "#7AA6C2", "#1f4b6e", "#c2b45a"][i % 6],
                     }}
                   />{" "}
-                  {i + 1}. {k} - {v}
+                  {k.charAt(0).toUpperCase() + k.slice(1)} {v}
                 </span>
               ))}
               {areaPie.others > 0 && (
                 <span>
-                  <i style={{ background: "#1b3b5a" }} /> Otros - {areaPie.others}
+                  <i style={{ background: "#1b3b5a" }} /> Otros {areaPie.others}
                 </span>
               )}
             </div>
@@ -410,7 +506,7 @@ Total: {v}
           <div className={styles.card}>
             <div className={styles.cardHeader}>
               <div>
-                <h3>Usuarios con mas observaciones</h3>
+                <h3>Usuarios con más observaciones</h3>
                 <span>Subidas vs cerradas</span>
               </div>
               <div className={styles.exportButtons}>
@@ -439,51 +535,55 @@ Total: {v}
                     <>
                       <line x1={0} y1={h} x2={w} y2={h} stroke="#2d3748" strokeWidth={1} />
                       {usersBars.map((u, i) => {
-                        const x = i * groupW + 10;
-                        const barW = (groupW - 20) / 2;
-                        const h1 = (u.created / max) * (h - 20);
-                        const h2 = (u.closed / max) * (h - 20);
-                        const total = u.created + u.closed || 1;
+                        const slotX = i * groupW;
+                        const blueW = Math.max(14, Math.min(34, groupW - 12));
+                        const yellowW = Math.max(8, Math.floor(blueW * 0.58));
+                        const centerX = slotX + groupW / 2;
+                        const blueX = centerX - blueW / 2;
+                        const yellowX = centerX - yellowW / 2;
+                        const hCreated = (u.created / max) * (h - 22);
+                        const hClosed = (u.closed / max) * (h - 22);
+                        const yCreated = h - hCreated;
+                        const yClosed = h - hClosed;
+                        const shortName = u.user.length > 12 ? `${u.user.slice(0, 12)}...` : u.user;
                         return (
                           <g key={u.user}>
                             <rect
-                              x={x}
-                              y={h - h1}
-                              width={barW}
-                              height={h1}
+                              x={blueX}
+                              y={yCreated}
+                              width={blueW}
+                              height={hCreated}
                               rx={4}
                               fill="#4B8BBE"
                             >
                               <title>
                                 {u.user}
-Subidas: {u.created} ({formatPct(u.created / total)})
-Cerradas:{" "}
-                                {u.closed} ({formatPct(u.closed / total)})
+Subidas: {u.created}
+Cerradas: {u.closed}
                               </title>
                             </rect>
                             <rect
-                              x={x + barW + 6}
-                              y={h - h2}
-                              width={barW}
-                              height={h2}
+                              x={yellowX}
+                              y={yClosed}
+                              width={yellowW}
+                              height={hClosed}
                               rx={4}
                               fill="#FFE873"
                             >
                               <title>
                                 {u.user}
-Subidas: {u.created} ({formatPct(u.created / total)})
-Cerradas:{" "}
-                                {u.closed} ({formatPct(u.closed / total)})
+Subidas: {u.created}
+Cerradas: {u.closed}
                               </title>
                             </rect>
                             <text
-                              x={x + barW}
+                              x={centerX}
                               y={h + 16}
                               textAnchor="middle"
-                              fontSize="10"
+                              fontSize="10.5"
                               fill="#cbd5f5"
                             >
-                              {u.user.slice(0, 10)}
+                              {shortName}
                             </text>
                           </g>
                         );

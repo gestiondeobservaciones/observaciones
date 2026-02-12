@@ -241,6 +241,85 @@
   animation: modalPop 0.2s ease;
 }
 
+.modalCardTight {
+  padding: 14px;
+  border-radius: 16px;
+}
+
+.modalCardTight .label {
+  font-size: 12px;
+  letter-spacing: 0.4px;
+}
+
+.modalCardTight .form {
+  gap: 12px;
+}
+
+.modalCardTight .twoCol {
+  gap: 10px;
+}
+
+.modalCardTight .field {
+  gap: 6px;
+}
+
+.modalCardTight .input {
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.modalCardTight .textarea {
+  min-height: 90px;
+}
+
+.modalCardTight .evidenceBlock {
+  padding: 10px;
+  gap: 6px;
+  border-radius: 14px;
+}
+
+.modalCardTight .fileButton {
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+.modalCardTight .submit {
+  padding: 12px 16px;
+  border-radius: 12px;
+}
+
+.modalCardTight .helperText,
+.modalCardTight .fileName {
+  font-size: 11px;
+}
+
+.editModalPanel {
+  width: min(820px, 95vw);
+}
+
+.editCardCompact {
+  padding: 16px;
+}
+
+.editFormCompact {
+  gap: 14px;
+}
+
+.editTextareaCompact {
+  min-height: 110px;
+}
+
+.editEvidenceCompact {
+  padding: 12px;
+  gap: 6px;
+}
+
+.editThumb {
+  width: 96px;
+  height: 96px;
+}
+
 .modalActions {
   display: flex;
   justify-content: flex-end;
@@ -282,6 +361,50 @@
   .card {
     padding: 16px;
     border-radius: 16px;
+  }
+
+  .modalCardTight {
+    padding: 10px;
+    border-radius: 14px;
+  }
+
+  .modalCardTight .input {
+    padding: 9px 11px;
+    font-size: 13px;
+  }
+
+  .modalCardTight .textarea {
+    min-height: 78px;
+  }
+
+  .modalCardTight .evidenceBlock {
+    padding: 8px;
+  }
+
+  .editModalPanel {
+    width: min(720px, 94vw);
+  }
+
+  .editCardCompact {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .editFormCompact {
+    gap: 10px;
+  }
+
+  .editTextareaCompact {
+    min-height: 88px;
+  }
+
+  .editEvidenceCompact {
+    padding: 10px;
+  }
+
+  .editThumb {
+    width: 74px;
+    height: 74px;
   }
 
   .submit {

@@ -471,6 +471,16 @@ export default function ObservacionesPage() {
         return;
       }
 
+      try {
+        await fetch("/api/sheets", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "create", data: payload }),
+        });
+      } catch {
+        // no bloqueamos UI si falla el registro en Sheets
+      }
+
       setNewOpen(false);
       await load();
     } finally {
@@ -520,6 +530,30 @@ export default function ObservacionesPage() {
       if (error) {
         alert("Error guardando: " + error.message);
         return;
+      }
+
+      try {
+        await fetch("/api/sheets", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "edit",
+            data: {
+              id: editTarget.id,
+              estado: editTarget.estado,
+              responsable: editTarget.responsable,
+              area: editArea,
+              equipo_lugar: editEquipoLugar.trim(),
+              categoria: editCategoria,
+              plazo: editPlazo,
+              descripcion: editDescripcion.trim(),
+              creado_por: editTarget.creado_por ?? "",
+              creado_en: editTarget.creado_en,
+            },
+          }),
+        });
+      } catch {
+        // no bloqueamos UI si falla el registro en Sheets
       }
 
       setEditOpen(false);
@@ -582,6 +616,33 @@ export default function ObservacionesPage() {
 
       if (error) throw new Error(error.message);
 
+      try {
+        await fetch("/api/sheets", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "close",
+            data: {
+              id: closeTarget.id,
+              estado: "cerrada",
+              responsable: closeTarget.responsable,
+              area: closeTarget.area,
+              equipo_lugar: closeTarget.equipo_lugar,
+              categoria: closeTarget.categoria,
+              plazo: closeTarget.plazo,
+              descripcion: closeTarget.descripcion,
+              creado_por: closeTarget.creado_por ?? "",
+              creado_en: closeTarget.creado_en,
+              cerrado_por: email,
+              cerrado_en: new Date().toISOString(),
+              cierre_descripcion: desc,
+            },
+          }),
+        });
+      } catch {
+        // no bloqueamos UI si falla el registro en Sheets
+      }
+
       setCloseOpen(false);
       setCloseTarget(null);
       await load();
@@ -620,12 +681,23 @@ export default function ObservacionesPage() {
     }
   }
 
-  const pageBg = "transparent"; // usar fondo global
+  const pageBg =
+    'url("https://whxeijdmxfteizyabtwi.supabase.co/storage/v1/object/public/assets/fondos/fondo%20cerro.jpg")';
   const cardBg = "white";
 
   if (loading) {
     return (
-      <div style={{ padding: 20, background: pageBg, minHeight: "100vh" }}>
+      <div
+        style={{
+          padding: 20,
+          background: pageBg,
+          minHeight: "100vh",
+          backgroundSize: "cover",
+          backgroundPosition: "center top",
+          backgroundRepeat: "no-repeat",
+          backgroundAttachment: "fixed",
+        }}
+      >
         <div
           style={{
             background: cardBg,
@@ -643,7 +715,17 @@ export default function ObservacionesPage() {
   }
 
   return (
-    <div style={{ background: pageBg, minHeight: "100vh", padding: 16 }}>
+    <div
+      style={{
+        background: pageBg,
+        minHeight: "100vh",
+        padding: 16,
+        backgroundSize: "cover",
+        backgroundPosition: "center top",
+        backgroundRepeat: "no-repeat",
+        backgroundAttachment: "fixed",
+      }}
+    >
       {/* Header */}
       <div
         style={{
@@ -659,7 +741,18 @@ export default function ObservacionesPage() {
         }}
       >
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ fontSize: 20, fontWeight: 900 }}>Observaciones</div>
+          <div
+            style={{
+              fontSize: 22,
+              fontWeight: 900,
+              letterSpacing: 0.6,
+              color: "#0b1220",
+              textTransform: "uppercase",
+              textShadow: "0 2px 0 rgba(255,255,255,0.6), 0 10px 24px rgba(15,23,42,0.25)",
+            }}
+          >
+            GESTION DE OBSERVACIONES
+          </div>
           <div
             style={{
               display: "inline-flex",
@@ -771,18 +864,21 @@ export default function ObservacionesPage() {
         {/* Pendientes */}
         <div
           style={{
-            background: "white",
-            border: "1px solid #e5e7eb",
+            background: "rgba(15, 23, 42, 0.35)",
+            border: "1px solid rgba(148, 163, 184, 0.45)",
             borderRadius: 14,
             padding: 14,
+            boxShadow: "0 20px 50px rgba(2, 6, 23, 0.35)",
+            backdropFilter: "blur(8px)",
+            outline: "1px solid rgba(148, 163, 184, 0.15)",
           }}
         >
-          <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 10 }}>
+          <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 10, color: "#e2e8f0" }}>
             Pendientes ({pendientes.length})
           </div>
 
           {pendientes.length === 0 ? (
-            <div style={{ color: "#6b7280", fontSize: 13 }}>No hay pendientes.</div>
+            <div style={{ color: "#cbd5f5", fontSize: 13 }}>No hay pendientes.</div>
           ) : (
             <div style={{ display: "grid", gap: 12 }}>
               {pendientes.map((o) => {
@@ -793,11 +889,11 @@ export default function ObservacionesPage() {
                   <div
                     key={o.id}
                     style={{
-                      border: `2px solid ${getRiesgoColor(o.categoria)}`,
-                      borderRadius: 14,
-                      padding: 14,
-                      background: "#ffffff",
-                      boxShadow: "0 8px 18px rgba(0,0,0,0.08)",
+                      border: `1px solid ${getRiesgoColor(o.categoria)}`,
+                      borderRadius: 16,
+                      padding: 16,
+                      background: "linear-gradient(180deg, #DCE6F2 0%, #C9D6E6 100%)",
+                      boxShadow: "0 6px 16px rgba(15,23,42,0.08)",
                     }}
                   >
                     <div
@@ -925,29 +1021,32 @@ export default function ObservacionesPage() {
         {/* Cerradas */}
         <div
           style={{
-            background: "white",
-            border: "1px solid #e5e7eb",
+            background: "rgba(15, 23, 42, 0.35)",
+            border: "1px solid rgba(148, 163, 184, 0.45)",
             borderRadius: 14,
             padding: 14,
+            boxShadow: "0 20px 50px rgba(2, 6, 23, 0.35)",
+            backdropFilter: "blur(8px)",
+            outline: "1px solid rgba(148, 163, 184, 0.15)",
           }}
         >
-          <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 10 }}>
+          <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 10, color: "#e2e8f0" }}>
             Cerradas ({cerradas.length})
           </div>
 
           {cerradas.length === 0 ? (
-            <div style={{ color: "#6b7280", fontSize: 13 }}>Aún no hay cerradas.</div>
+            <div style={{ color: "#cbd5f5", fontSize: 13 }}>Aún no hay cerradas.</div>
           ) : (
             <div style={{ display: "grid", gap: 12 }}>
               {cerradas.map((o) => (
                 <div
                   key={o.id}
                   style={{
-                    border: `2px solid ${getRiesgoColor(o.categoria)}`,
-                    borderRadius: 14,
-                    padding: 14,
-                    background: "#ffffff",
-                    boxShadow: "0 8px 18px rgba(0,0,0,0.08)",
+                    border: `1px solid ${getRiesgoColor(o.categoria)}`,
+                    borderRadius: 16,
+                    padding: 16,
+                    background: "linear-gradient(180deg, #DCE6F2 0%, #C9D6E6 100%)",
+                    boxShadow: "0 6px 16px rgba(15,23,42,0.08)",
                   }}
                 >
                   <div
@@ -1214,13 +1313,13 @@ export default function ObservacionesPage() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            padding: 16,
+            padding: 8,
             zIndex: 70,
           }}
           className={styles.modalOverlay}
         >
           <div onClick={(e) => e.stopPropagation()} style={{ width: "min(860px, 96vw)" }} className={styles.modalPanel}>
-            <div className={styles.card} role="dialog" aria-modal="true">
+            <div className={`${styles.card} ${styles.modalCardTight}`} role="dialog" aria-modal="true">
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                 <div style={{ fontWeight: 900, color: "#e2e8f0", fontSize: 18 }}>Nueva observación</div>
                 <div style={{ flex: 1 }} />
@@ -1314,7 +1413,7 @@ export default function ObservacionesPage() {
                     value={newDescripcion}
                     onChange={(e) => setNewDescripcion(e.target.value)}
                     placeholder="Describe la observación..."
-                    rows={5}
+                    rows={3}
                     className={`${styles.input} ${styles.textarea} ${newInvalid.desc ? styles.inputError : ""}`}
                   />
                 </label>
@@ -1387,13 +1486,13 @@ export default function ObservacionesPage() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            padding: 16,
+            padding: 8,
             zIndex: 70,
           }}
           className={styles.modalOverlay}
         >
-          <div onClick={(e) => e.stopPropagation()} style={{ width: "min(860px, 96vw)" }} className={styles.modalPanel}>
-            <div className={styles.card} role="dialog" aria-modal="true">
+          <div onClick={(e) => e.stopPropagation()} className={`${styles.modalPanel} ${styles.editModalPanel}`}>
+            <div className={`${styles.card} ${styles.modalCardTight} ${styles.editCardCompact}`} role="dialog" aria-modal="true">
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                 <div style={{ fontWeight: 900, color: "#e2e8f0", fontSize: 18 }}>Editar observación</div>
                 <div style={{ flex: 1 }} />
@@ -1415,7 +1514,7 @@ export default function ObservacionesPage() {
               </div>
 
               {editError && <div className={styles.errorBox}>{editError}</div>}
-              <form onSubmit={guardarEdicion} className={styles.form}>
+              <form onSubmit={guardarEdicion} className={`${styles.form} ${styles.editFormCompact}`}>
                 <div className={styles.twoCol}>
                   <label className={styles.field}>
                     <span className={styles.label}>Responsable</span>
@@ -1485,12 +1584,14 @@ export default function ObservacionesPage() {
                     value={editDescripcion}
                     onChange={(e) => setEditDescripcion(e.target.value)}
                     placeholder="Describe la observación..."
-                    rows={5}
-                    className={`${styles.input} ${styles.textarea} ${editInvalid.desc ? styles.inputError : ""}`}
+                    rows={3}
+                    className={`${styles.input} ${styles.textarea} ${styles.editTextareaCompact} ${
+                      editInvalid.desc ? styles.inputError : ""
+                    }`}
                   />
                 </label>
 
-                <div className={styles.evidenceBlock}>
+                <div className={`${styles.evidenceBlock} ${styles.editEvidenceCompact}`}>
                   <div className={styles.evidenceTitle}>Evidencia (archivo opcional)</div>
                   {editCurrentUrl && (
                     <div className={styles.helperText}>
@@ -1518,11 +1619,10 @@ export default function ObservacionesPage() {
                           src={editCurrentUrl}
                           alt="Evidencia actual"
                           style={{
-                            width: 120,
-                            height: 120,
                             objectFit: "cover",
                             borderRadius: 8,
                           }}
+                          className={styles.editThumb}
                         />
                       </button>
                     </div>
@@ -1594,13 +1694,13 @@ export default function ObservacionesPage() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            padding: 16,
+            padding: 8,
             zIndex: 70,
           }}
           className={styles.modalOverlay}
         >
           <div onClick={(e) => e.stopPropagation()} style={{ width: "min(760px, 96vw)" }} className={styles.modalPanel}>
-            <div className={styles.card} role="dialog" aria-modal="true">
+            <div className={`${styles.card} ${styles.modalCardTight}`} role="dialog" aria-modal="true">
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                 <div style={{ fontWeight: 900, color: "#e2e8f0", fontSize: 18 }}>
                   Cerrar observación (evidencia obligatoria)
@@ -1640,7 +1740,7 @@ export default function ObservacionesPage() {
                     value={closeDesc}
                     onChange={(e) => setCloseDesc(e.target.value)}
                     placeholder="Ej: Se instaló guarda, se ajustó pernos, se limpió..."
-                    rows={4}
+                    rows={3}
                     className={`${styles.input} ${styles.textarea} ${closeInvalid.desc ? styles.inputError : ""}`}
                   />
                 </label>
