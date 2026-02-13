@@ -18,7 +18,7 @@ type Obs = {
   cerrado_en: string | null;
 };
 
-type Intervalo = "dia" | "semana" | "mes";
+type Intervalo = "dia" | "semana" | "quincena" | "mes";
 
 function toDateOnly(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -28,6 +28,28 @@ function parseISO(s?: string | null) {
   if (!s) return null;
   const d = new Date(s);
   return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function formatPeriodoLabel(key: string, intervalo: Intervalo) {
+  if (intervalo === "quincena") {
+    const q = key.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (q) {
+      const yyyy = Number(q[1]);
+      const mm = Number(q[2]);
+      const dd = Number(q[3]);
+      const fin = dd === 1 ? 15 : new Date(yyyy, mm, 0).getDate();
+      return `${String(dd).padStart(2, "0")}/${String(mm).padStart(2, "0")} - ${String(fin).padStart(2, "0")}/${String(mm).padStart(2, "0")}`;
+    }
+    return key;
+  }
+  if (intervalo === "mes") {
+    const m = key.match(/^(\d{4})-(\d{2})$/);
+    if (m) return `${m[2]}/${m[1].slice(2)}`;
+    return key;
+  }
+  const d = key.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (d) return `${d[3]}/${d[2]}`;
+  return key;
 }
 
 function inRange(d: Date, from?: string, to?: string) {
@@ -157,7 +179,7 @@ export default function DashboardPage() {
   const [cats, setCats] = useState<string[]>([]);
   const [estado, setEstado] = useState<"todas" | "pendiente" | "cerrada">("todas");
   const [topN, setTopN] = useState(10);
-  const [intervalo, setIntervalo] = useState<Intervalo>("semana");
+  const [intervalo, setIntervalo] = useState<Intervalo>("quincena");
 
   async function load() {
     setLoading(true);
@@ -268,6 +290,11 @@ export default function DashboardPage() {
         date.setDate(date.getDate() - day + 1);
         return date.toISOString().slice(0, 10);
       }
+      if (intervalo === "quincena") {
+        const date = toDateOnly(d);
+        const startDay = date.getDate() <= 15 ? 1 : 16;
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(startDay).padStart(2, "0")}`;
+      }
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     }
 
@@ -369,6 +396,7 @@ export default function DashboardPage() {
             <select value={intervalo} onChange={(e) => setIntervalo(e.target.value as Intervalo)}>
               <option value="dia">Día</option>
               <option value="semana">Semana</option>
+              <option value="quincena">Quincenal</option>
               <option value="mes">Mes</option>
             </select>
             <input
@@ -510,7 +538,29 @@ Observaciones: {v}
                 <span>Subidas vs cerradas</span>
               </div>
               <div className={styles.exportButtons}>
-                <button onClick={() => exportSvgToPng("chart-users", "usuarios.png")}>PNG</button>
+                <button
+                  onClick={() => {
+                    const topCreated = usersBars.reduce(
+                      (best, u) => (u.created > best.created ? u : best),
+                      usersBars[0] || { user: "Sin datos", created: 0, closed: 0 },
+                    );
+                    const topClosed = usersBars.reduce(
+                      (best, u) => (u.closed > best.closed ? u : best),
+                      usersBars[0] || { user: "Sin datos", created: 0, closed: 0 },
+                    );
+                    exportSvgToPng(
+                      "chart-users",
+                      "usuarios.png",
+                      [
+                        "Comparativo de observaciones creadas (azul) y cerradas (amarillo) por usuario.",
+                        `Mas subidas: ${topCreated.user} (${topCreated.created}) | Mas cerradas: ${topClosed.user} (${topClosed.closed})`,
+                      ],
+                      "GRAFICA DE USUARIOS CON MAS OBSERVACIONES",
+                    );
+                  }}
+                >
+                  PNG
+                </button>
                 <button
                   onClick={() =>
                     downloadCsv("usuarios.csv", [
@@ -523,12 +573,12 @@ Observaciones: {v}
                 </button>
               </div>
             </div>
-            <svg id="chart-users" viewBox="0 0 640 280" className={styles.chartSvg}>
-              <rect x="0" y="0" width="640" height="280" fill="transparent" />
-              <g transform="translate(60,20)">
+            <svg id="chart-users" viewBox="0 0 640 330" className={styles.chartSvg}>
+              <rect x="0" y="0" width="640" height="330" fill="transparent" />
+              <g transform="translate(52,16)">
                 {(() => {
-                  const w = 520;
-                  const h = 220;
+                  const w = 536;
+                  const h = 270;
                   const max = Math.max(1, ...usersBars.map((u) => Math.max(u.created, u.closed)));
                   const groupW = w / Math.max(1, usersBars.length);
                   return (
@@ -578,9 +628,9 @@ Cerradas: {u.closed}
                             </rect>
                             <text
                               x={centerX}
-                              y={h + 16}
+                              y={h + 20}
                               textAnchor="middle"
-                              fontSize="10.5"
+                              fontSize="11.5"
                               fill="#cbd5f5"
                             >
                               {shortName}
@@ -611,12 +661,28 @@ Cerradas: {u.closed}
                 <span>Intervalo: {intervalo}</span>
               </div>
               <div className={styles.exportButtons}>
-                <button onClick={() => exportSvgToPng("chart-time", "serie.png")}>PNG</button>
+                <button
+                  onClick={() => {
+                    const totalNuevas = series.created.reduce((s, v) => s + v, 0);
+                    const totalCerradas = series.closed.reduce((s, v) => s + v, 0);
+                    exportSvgToPng(
+                      "chart-time",
+                      "serie.png",
+                      [
+                        `Evolucion de observaciones nuevas (azul) y cerradas (amarillo) por ${intervalo}.`,
+                        `Totales del periodo: Nuevas ${totalNuevas} | Cerradas ${totalCerradas}`,
+                      ],
+                      "GRAFICA DE NUEVAS VS CERRADAS",
+                    );
+                  }}
+                >
+                  PNG
+                </button>
                 <button
                   onClick={() =>
                     downloadCsv("serie.csv", [
                       ["periodo", "nuevas", "cerradas"],
-                      ...series.labels.map((l, i) => [l, series.created[i], series.closed[i]]),
+                      ...series.labels.map((l, i) => [formatPeriodoLabel(l, intervalo), series.created[i], series.closed[i]]),
                     ])
                   }
                 >
@@ -624,23 +690,47 @@ Cerradas: {u.closed}
                 </button>
               </div>
             </div>
-            <svg id="chart-time" viewBox="0 0 640 280" className={styles.chartSvg}>
-              <g transform="translate(50,20)">
+            <svg id="chart-time" viewBox="0 0 640 330" className={styles.chartSvg}>
+              <g transform="translate(42,16)">
                 {(() => {
-                  const w = 540;
-                  const h = 220;
+                  const w = 556;
+                  const h = 270;
                   const max = Math.max(1, ...series.created, ...series.closed);
                   const step = series.labels.length > 1 ? w / (series.labels.length - 1) : w;
                   const points = series.created.map((v, i) => `${i * step},${h - (v / max) * (h - 20)}`).join(" ");
                   const points2 = series.closed.map((v, i) => `${i * step},${h - (v / max) * (h - 20)}`).join(" ");
                   return (
                     <>
-                      <line x1={0} y1={h} x2={w} y2={h} stroke="#2d3748" />
-                      <polyline points={points} fill="none" stroke="#4B8BBE" strokeWidth={3} />
-                      <polyline points={points2} fill="none" stroke="#FFE873" strokeWidth={3} />
+                      <line x1={0} y1={h} x2={w} y2={h} stroke="#2d3748" strokeWidth={1.2} />
+                      <polyline points={points} fill="none" stroke="#4B8BBE" strokeWidth={3.5} />
+                      <polyline points={points2} fill="none" stroke="#FFE873" strokeWidth={3.5} />
+                      {series.created.map((v, i) => {
+                        const x = i * step;
+                        const y = h - (v / max) * (h - 20);
+                        return (
+                          <circle key={`c-${series.labels[i]}`} cx={x} cy={y} r={4} fill="#4B8BBE" stroke="#0b1220" strokeWidth={1}>
+                            <title>
+                              {formatPeriodoLabel(series.labels[i], intervalo)}
+Nuevas: {v}
+                            </title>
+                          </circle>
+                        );
+                      })}
+                      {series.closed.map((v, i) => {
+                        const x = i * step;
+                        const y = h - (v / max) * (h - 20);
+                        return (
+                          <circle key={`z-${series.labels[i]}`} cx={x} cy={y} r={4} fill="#FFE873" stroke="#0b1220" strokeWidth={1}>
+                            <title>
+                              {formatPeriodoLabel(series.labels[i], intervalo)}
+Cerradas: {v}
+                            </title>
+                          </circle>
+                        );
+                      })}
                       {series.labels.map((l, i) => (
-                        <text key={l} x={i * step} y={h + 16} fontSize="9" fill="#cbd5f5" textAnchor="middle">
-                          {l.slice(5)}
+                        <text key={l} x={i * step} y={h + 20} fontSize="10.5" fill="#cbd5f5" textAnchor="middle">
+                          {formatPeriodoLabel(l, intervalo)}
                         </text>
                       ))}
                     </>
@@ -681,7 +771,7 @@ Cerradas: {u.closed}
                 </button>
               </div>
             </div>
-            <svg id="chart-sev" viewBox="0 0 360 280" className={styles.chartSvg}>
+                        <svg id="chart-sev" viewBox="0 0 360 280" className={styles.chartSvg}>
               {(() => {
                 const total = Math.max(1, severity.bajo + severity.medio + severity.alto);
                 const baseW = 200;
@@ -689,18 +779,19 @@ Cerradas: {u.closed}
                 const baseH = 120;
                 const scale = (v: number) => Math.max(20, (v / total) * baseH);
                 const blocks = [
-                  { k: "bajo", v: severity.bajo, color: "#4B8BBE" },
-                  { k: "medio", v: severity.medio, color: "#306998" },
-                  { k: "alto", v: severity.alto, color: "#FFE873" },
+                  { k: "bajo", v: severity.bajo, top: "#5a9ccf", sideL: "#3f77a7", sideR: "#2e5f8a", text: "#f8fafc" },
+                  { k: "medio", v: severity.medio, top: "#3e7fb8", sideL: "#2f5e8e", sideR: "#22496f", text: "#f8fafc" },
+                  { k: "alto", v: severity.alto, top: "#f4df6d", sideL: "#d8bb2b", sideR: "#b89512", text: "#111827" },
                 ];
                 let y = 210;
+
                 return (
                   <g transform="translate(80,0)">
                     {blocks.map((b, i) => {
                       const h = scale(b.v);
                       const w = baseW - i * 24;
                       const d = baseD - i * 6;
-                      const x = 0 + i * 12;
+                      const x = i * 12;
                       const top = y - h;
                       const p1 = `${x},${top}`;
                       const p2 = `${x + w},${top}`;
@@ -711,12 +802,13 @@ Cerradas: {u.closed}
                       }`;
                       const side2 = `${x},${top} ${x},${y} ${x + d},${y - d / 2} ${x + d},${top - d / 2}`;
                       y = top;
+
                       return (
                         <g key={b.k}>
-                          <polygon points={side2} fill="#1f2937" opacity="0.45" />
-                          <polygon points={side1} fill="#0b1220" opacity="0.55" />
-                          <polygon points={`${p1} ${p2} ${p3} ${p4}`} fill={b.color} />
-                          <text x={x + w / 2} y={top - 6} textAnchor="middle" fontSize="11" fill="#e2e8f0">
+                          <polygon points={side2} fill={b.sideL} stroke="#0b1220" strokeWidth="1" />
+                          <polygon points={side1} fill={b.sideR} stroke="#0b1220" strokeWidth="1" />
+                          <polygon points={`${p1} ${p2} ${p3} ${p4}`} fill={b.top} stroke="#0b1220" strokeWidth="1.2" />
+                          <text x={x + w / 2} y={top - 6} textAnchor="middle" fontSize="12" fontWeight="700" fill={b.text}>
                             {b.k} - {b.v}
                           </text>
                         </g>
@@ -732,3 +824,4 @@ Cerradas: {u.closed}
     </main>
   );
 }
+
