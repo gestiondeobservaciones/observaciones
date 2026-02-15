@@ -168,10 +168,11 @@ export default function ObservacionesPage() {
   const [savingNew, setSavingNew] = useState(false);
   const [newUploadUrl, setNewUploadUrl] = useState<string | null>(null);
   const [newError, setNewError] = useState<string | null>(null);
-  const [newInvalid, setNewInvalid] = useState<{ equipo: boolean; plazo: boolean; desc: boolean }>({
+  const [newInvalid, setNewInvalid] = useState<{ equipo: boolean; plazo: boolean; desc: boolean; evidencia: boolean }>({
     equipo: false,
     plazo: false,
     desc: false,
+    evidencia: false,
   });
 
   // modal editar
@@ -189,10 +190,11 @@ export default function ObservacionesPage() {
   const [editUploadUrl, setEditUploadUrl] = useState<string | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
-  const [editInvalid, setEditInvalid] = useState<{ equipo: boolean; plazo: boolean; desc: boolean }>({
+  const [editInvalid, setEditInvalid] = useState<{ equipo: boolean; plazo: boolean; desc: boolean; evidencia: boolean }>({
     equipo: false,
     plazo: false,
     desc: false,
+    evidencia: false,
   });
 
   const newEquipoRef = useRef<HTMLInputElement | null>(null);
@@ -283,6 +285,29 @@ export default function ObservacionesPage() {
     setLoading(false);
   }
 
+  async function syncSheets(payload: unknown) {
+    try {
+      const res = await fetch("/api/sheets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        let msg = `HTTP ${res.status}`;
+        try {
+          const data = await res.json();
+          if (data?.error) msg = String(data.error);
+        } catch {
+          // ignore parse errors and keep HTTP status
+        }
+        console.error("Sheets sync failed:", msg);
+      }
+    } catch (err) {
+      console.error("Sheets sync request failed:", err);
+    }
+  }
+
   useEffect(() => {
     (async () => {
       await loadPerfil();
@@ -350,7 +375,7 @@ export default function ObservacionesPage() {
     setNewFile(null);
     setNewUploadUrl(null);
     setNewError(null);
-    setNewInvalid({ equipo: false, plazo: false, desc: false });
+    setNewInvalid({ equipo: false, plazo: false, desc: false, evidencia: false });
     setNewOpen(true);
   }
 
@@ -366,7 +391,7 @@ export default function ObservacionesPage() {
     setEditFile(null);
     setEditUploadUrl(null);
     setEditError(null);
-    setEditInvalid({ equipo: false, plazo: false, desc: false });
+    setEditInvalid({ equipo: false, plazo: false, desc: false, evidencia: false });
     setEditOpen(true);
   }
 
@@ -424,22 +449,27 @@ export default function ObservacionesPage() {
     if (!perfil) return;
 
     setNewError(null);
-    setNewInvalid({ equipo: false, plazo: false, desc: false });
+    setNewInvalid({ equipo: false, plazo: false, desc: false, evidencia: false });
 
     if (!newEquipoLugar.trim()) {
       setNewError("Completa los campos obligatorios.");
-      setNewInvalid({ equipo: true, plazo: false, desc: false });
+      setNewInvalid({ equipo: true, plazo: false, desc: false, evidencia: false });
       newEquipoRef.current?.focus();
       return;
     }
     if (!newPlazo) {
       setNewError("Selecciona el plazo.");
-      setNewInvalid({ equipo: false, plazo: true, desc: false });
+      setNewInvalid({ equipo: false, plazo: true, desc: false, evidencia: false });
       return;
     }
     if (!newDescripcion.trim()) {
       setNewError("Completa la descripción.");
-      setNewInvalid({ equipo: false, plazo: false, desc: true });
+      setNewInvalid({ equipo: false, plazo: false, desc: true, evidencia: false });
+      return;
+    }
+    if (!newFile) {
+      setNewError("La evidencia es obligatoria.");
+      setNewInvalid({ equipo: false, plazo: false, desc: false, evidencia: true });
       return;
     }
 
@@ -465,21 +495,17 @@ export default function ObservacionesPage() {
         creado_en: new Date().toISOString(),
       };
 
-      const { error } = await supabase.from("observaciones").insert(payload);
-      if (error) {
-        alert("Error guardando: " + error.message);
+      const { data: inserted, error } = await supabase
+        .from("observaciones")
+        .insert(payload)
+        .select("*")
+        .single();
+      if (error || !inserted) {
+        alert("Error guardando: " + (error?.message || "No se pudo crear la observación."));
         return;
       }
 
-      try {
-        await fetch("/api/sheets", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "create", data: payload }),
-        });
-      } catch {
-        // no bloqueamos UI si falla el registro en Sheets
-      }
+      await syncSheets({ action: "create", data: inserted });
 
       setNewOpen(false);
       await load();
@@ -493,22 +519,28 @@ export default function ObservacionesPage() {
     if (!editTarget) return;
 
     setEditError(null);
-    setEditInvalid({ equipo: false, plazo: false, desc: false });
+    setEditInvalid({ equipo: false, plazo: false, desc: false, evidencia: false });
 
     if (!editEquipoLugar.trim()) {
       setEditError("Completa los campos obligatorios.");
-      setEditInvalid({ equipo: true, plazo: false, desc: false });
+      setEditInvalid({ equipo: true, plazo: false, desc: false, evidencia: false });
       editEquipoRef.current?.focus();
       return;
     }
     if (!editPlazo) {
       setEditError("Selecciona el plazo.");
-      setEditInvalid({ equipo: false, plazo: true, desc: false });
+      setEditInvalid({ equipo: false, plazo: true, desc: false, evidencia: false });
       return;
     }
     if (!editDescripcion.trim()) {
       setEditError("Completa la descripción.");
-      setEditInvalid({ equipo: false, plazo: false, desc: true });
+      setEditInvalid({ equipo: false, plazo: false, desc: true, evidencia: false });
+      return;
+    }
+    // En edición debe existir evidencia final: la actual o un nuevo archivo.
+    if (!editCurrentUrl && !editFile) {
+      setEditError("La evidencia es obligatoria.");
+      setEditInvalid({ equipo: false, plazo: false, desc: false, evidencia: true });
       return;
     }
 
@@ -532,29 +564,21 @@ export default function ObservacionesPage() {
         return;
       }
 
-      try {
-        await fetch("/api/sheets", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "edit",
-            data: {
-              id: editTarget.id,
-              estado: editTarget.estado,
-              responsable: editTarget.responsable,
-              area: editArea,
-              equipo_lugar: editEquipoLugar.trim(),
-              categoria: editCategoria,
-              plazo: editPlazo,
-              descripcion: editDescripcion.trim(),
-              creado_por: editTarget.creado_por ?? "",
-              creado_en: editTarget.creado_en,
-            },
-          }),
-        });
-      } catch {
-        // no bloqueamos UI si falla el registro en Sheets
-      }
+      await syncSheets({
+        action: "edit",
+        data: {
+          id: editTarget.id,
+          estado: editTarget.estado,
+          responsable: editTarget.responsable,
+          area: editArea,
+          equipo_lugar: editEquipoLugar.trim(),
+          categoria: editCategoria,
+          plazo: editPlazo,
+          descripcion: editDescripcion.trim(),
+          creado_por: editTarget.creado_por ?? "",
+          creado_en: editTarget.creado_en,
+        },
+      });
 
       setEditOpen(false);
       setEditTarget(null);
@@ -616,32 +640,24 @@ export default function ObservacionesPage() {
 
       if (error) throw new Error(error.message);
 
-      try {
-        await fetch("/api/sheets", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "close",
-            data: {
-              id: closeTarget.id,
-              estado: "cerrada",
-              responsable: closeTarget.responsable,
-              area: closeTarget.area,
-              equipo_lugar: closeTarget.equipo_lugar,
-              categoria: closeTarget.categoria,
-              plazo: closeTarget.plazo,
-              descripcion: closeTarget.descripcion,
-              creado_por: closeTarget.creado_por ?? "",
-              creado_en: closeTarget.creado_en,
-              cerrado_por: email,
-              cerrado_en: new Date().toISOString(),
-              cierre_descripcion: desc,
-            },
-          }),
-        });
-      } catch {
-        // no bloqueamos UI si falla el registro en Sheets
-      }
+      await syncSheets({
+        action: "close",
+        data: {
+          id: closeTarget.id,
+          estado: "cerrada",
+          responsable: closeTarget.responsable,
+          area: closeTarget.area,
+          equipo_lugar: closeTarget.equipo_lugar,
+          categoria: closeTarget.categoria,
+          plazo: closeTarget.plazo,
+          descripcion: closeTarget.descripcion,
+          creado_por: closeTarget.creado_por ?? "",
+          creado_en: closeTarget.creado_en,
+          cerrado_por: email,
+          cerrado_en: new Date().toISOString(),
+          cierre_descripcion: desc,
+        },
+      });
 
       setCloseOpen(false);
       setCloseTarget(null);
@@ -1418,8 +1434,8 @@ export default function ObservacionesPage() {
                   />
                 </label>
 
-                <div className={styles.evidenceBlock}>
-                  <div className={styles.evidenceTitle}>Evidencia (archivo opcional)</div>
+                <div className={`${styles.evidenceBlock} ${newInvalid.evidencia ? styles.inputErrorBlock : ""}`}>
+                  <div className={styles.evidenceTitle}>Evidencia (archivo obligatorio)</div>
                   <div className={styles.fileRow}>
                     <input
                       id="evidencia-file-new"
@@ -1588,44 +1604,45 @@ export default function ObservacionesPage() {
                   />
                 </label>
 
-                <div className={styles.evidenceBlock}>
-                  <div className={styles.evidenceTitle}>Evidencia (archivo opcional)</div>
+                <div
+                  className={`${styles.evidenceBlock} ${editInvalid.evidencia ? styles.inputErrorBlock : ""}`}
+                  style={{
+                    position: "relative",
+                    paddingRight: editCurrentUrl ? 110 : undefined,
+                    minHeight: editCurrentUrl ? 96 : undefined,
+                  }}
+                >
+                  <div className={styles.evidenceTitle}>Evidencia (archivo obligatorio)</div>
                   {editCurrentUrl && (
-                    <div className={styles.helperText}>
-                      Actual:{" "}
-                      <a href={editCurrentUrl} target="_blank" rel="noreferrer" className={styles.linkInline}>
-                        Ver evidencia
-                      </a>
-                    </div>
-                  )}
-                  {editCurrentUrl && (
-                    <div style={{ marginTop: 8 }}>
-                      <button
-                        type="button"
-                        onClick={() => openZoom(editCurrentUrl || "", "Evidencia")}
+                    <button
+                      type="button"
+                      onClick={() => openZoom(editCurrentUrl || "", "Evidencia")}
+                      style={{
+                        position: "absolute",
+                        right: 10,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        border: "2px solid rgba(148,163,184,0.7)",
+                        borderRadius: 10,
+                        padding: 4,
+                        background: "rgba(15,23,42,0.45)",
+                        cursor: "zoom-in",
+                        display: "inline-flex",
+                      }}
+                      title="Ver evidencia"
+                    >
+                      <img
+                        src={editCurrentUrl}
+                        alt="Evidencia actual"
                         style={{
-                          border: "2px solid rgba(148,163,184,0.7)",
-                          borderRadius: 10,
-                          padding: 4,
-                          background: "rgba(15,23,42,0.45)",
-                          cursor: "zoom-in",
-                          display: "inline-flex",
+                          width: 72,
+                          height: 72,
+                          objectFit: "cover",
+                          borderRadius: 8,
                         }}
-                      >
-                        <img
-                          src={editCurrentUrl}
-                          alt="Evidencia actual"
-                          style={{
-                            width: 120,
-                            height: 120,
-                            objectFit: "cover",
-                            borderRadius: 8,
-                          }}
-                        />
-                      </button>
-                    </div>
+                      />
+                    </button>
                   )}
-
                   <div className={styles.fileRow}>
                     <input
                       id="evidencia-file-edit"
