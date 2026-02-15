@@ -142,12 +142,15 @@ export default function ObservacionesPage() {
   const [perfilErr, setPerfilErr] = useState<string | null>(null);
   const [usuariosByEmail, setUsuariosByEmail] = useState<Record<string, string>>({});
   const isAdmin = perfil?.rol === "admin";
+  const actorEmail = useMemo(() => {
+    const fallback = perfil?.dni ? `${perfil.dni}@observaciones.local` : "";
+    return (perfil?.email || fallback).trim().toLowerCase();
+  }, [perfil?.email, perfil?.dni]);
 
   // modal cerrar
   const [closeOpen, setCloseOpen] = useState(false);
   const [closeTarget, setCloseTarget] = useState<Obs | null>(null);
   const [closeDesc, setCloseDesc] = useState("");
-  const [closeUrl, setCloseUrl] = useState("");
   const [closeFile, setCloseFile] = useState<File | null>(null);
   const [savingClose, setSavingClose] = useState(false);
   const [closeError, setCloseError] = useState<string | null>(null);
@@ -212,6 +215,15 @@ export default function ObservacionesPage() {
 
   const pendientes = useMemo(() => data.filter((d) => d.estado === "pendiente"), [data]);
   const cerradas = useMemo(() => data.filter((d) => d.estado === "cerrada"), [data]);
+
+  function isOwner(obs: Obs | null) {
+    if (!obs) return false;
+    return (obs.creado_por || "").trim().toLowerCase() === actorEmail;
+  }
+
+  function canEdit(obs: Obs | null) {
+    return isAdmin || isOwner(obs);
+  }
 
   async function loadPerfil() {
     setPerfilErr(null);
@@ -359,7 +371,6 @@ export default function ObservacionesPage() {
   function openCerrarModal(obs: Obs) {
     setCloseTarget(obs);
     setCloseDesc("");
-    setCloseUrl("");
     setCloseFile(null);
     setCloseError(null);
     setCloseInvalid({ desc: false, evidencia: false });
@@ -380,6 +391,10 @@ export default function ObservacionesPage() {
   }
 
   function openEditarModal(obs: Obs) {
+    if (!canEdit(obs)) {
+      alert("Solo el creador o un admin puede editar la observación.");
+      return;
+    }
     setEditTarget(obs);
     setEditResponsable(obs.responsable || "");
     setEditArea(obs.area || (AREAS[0] || "chancado"));
@@ -517,6 +532,14 @@ export default function ObservacionesPage() {
   async function guardarEdicion(e: React.FormEvent) {
     e.preventDefault();
     if (!editTarget) return;
+    if (!canEdit(editTarget)) {
+      alert("Solo el creador o un admin puede editar la observación.");
+      return;
+    }
+    if (!isAdmin && !actorEmail) {
+      alert("No se pudo validar el usuario actual. Vuelve a iniciar sesión.");
+      return;
+    }
 
     setEditError(null);
     setEditInvalid({ equipo: false, plazo: false, desc: false, evidencia: false });
@@ -558,9 +581,15 @@ export default function ObservacionesPage() {
         evidencia_url: evidenciaFinal,
       };
 
-      const { error } = await supabase.from("observaciones").update(payload).eq("id", editTarget.id);
+      const baseUpdate = supabase.from("observaciones").update(payload).eq("id", editTarget.id).select("id");
+      const query = isAdmin ? baseUpdate : baseUpdate.eq("creado_por", actorEmail);
+      const { data: updated, error } = await query.maybeSingle();
       if (error) {
         alert("Error guardando: " + error.message);
+        return;
+      }
+      if (!updated) {
+        alert("No autorizado: solo el creador o un admin puede editarla.");
         return;
       }
 
@@ -602,13 +631,11 @@ export default function ObservacionesPage() {
       return;
     }
 
-    // Evidencia obligatoria: archivo o URL
+    // Evidencia obligatoria: archivo
     const hasFile = !!closeFile;
-    const url = closeUrl.trim();
-    const hasUrl = !!url;
 
-    if (!hasFile && !hasUrl) {
-      setCloseError("La evidencia es obligatoria: sube un archivo o pega una URL.");
+    if (!hasFile) {
+      setCloseError("La evidencia es obligatoria: sube un archivo.");
       setCloseInvalid({ desc: false, evidencia: true });
       return;
     }
@@ -616,7 +643,7 @@ export default function ObservacionesPage() {
     setSavingClose(true);
 
     try {
-      let evidenciaFinal = url;
+      let evidenciaFinal = "";
 
       if (hasFile && closeFile) {
         evidenciaFinal = await uploadEvidencia(closeFile);
@@ -627,7 +654,7 @@ export default function ObservacionesPage() {
       } = await supabase.auth.getSession();
       const email = session?.user?.email || "desconocido@observaciones.local";
 
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from("observaciones")
         .update({
           estado: "cerrada",
@@ -636,9 +663,12 @@ export default function ObservacionesPage() {
           cerrado_por: email,
           cerrado_en: new Date().toISOString(),
         })
-        .eq("id", closeTarget.id);
+        .eq("id", closeTarget.id)
+        .select("id")
+        .maybeSingle();
 
       if (error) throw new Error(error.message);
+      if (!updated) throw new Error("No autorizado para cerrar esta observación.");
 
       await syncSheets({
         action: "close",
@@ -900,6 +930,7 @@ export default function ObservacionesPage() {
               {pendientes.map((o) => {
                 const s = getSemaforo(o.creado_en, o.plazo);
                 const pillTone = s.sem === "verde" ? "green" : s.sem === "amarillo" ? "yellow" : "red";
+                const canEditThis = canEdit(o);
 
                 return (
                   <div
@@ -1006,24 +1037,30 @@ export default function ObservacionesPage() {
                             ✅ Cerrar
                           </button>
 
-                          <button
-                            onClick={() => openEditarModal(o)}
-                            style={{
-                              background: "#f8fafc",
-                              color: "#334155",
-                              border: "1px solid #cbd5f5",
-                              padding: "6px 10px",
-                              borderRadius: 8,
-                              fontWeight: 800,
-                              fontSize: 12,
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 8,
-                              cursor: "pointer",
-                            }}
-                          >
-                            ✏️ Editar
-                          </button>
+                          {canEditThis ? (
+                            <button
+                              onClick={() => openEditarModal(o)}
+                              style={{
+                                background: "#f8fafc",
+                                color: "#334155",
+                                border: "1px solid #cbd5f5",
+                                padding: "6px 10px",
+                                borderRadius: 8,
+                                fontWeight: 800,
+                                fontSize: 12,
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 8,
+                                cursor: "pointer",
+                              }}
+                            >
+                              ✏️ Editar
+                            </button>
+                          ) : (
+                            <div style={{ fontSize: 12, color: "#334155", fontWeight: 700 }}>
+                              Solo el creador o admin puede editar.
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1435,7 +1472,7 @@ export default function ObservacionesPage() {
                 </label>
 
                 <div className={`${styles.evidenceBlock} ${newInvalid.evidencia ? styles.inputErrorBlock : ""}`}>
-                  <div className={styles.evidenceTitle}>Evidencia (archivo obligatorio)</div>
+                  <div className={styles.evidenceTitle}>Evidencia 📷</div>
                   <div className={styles.fileRow}>
                     <input
                       id="evidencia-file-new"
@@ -1612,7 +1649,7 @@ export default function ObservacionesPage() {
                     minHeight: editCurrentUrl ? 96 : undefined,
                   }}
                 >
-                  <div className={styles.evidenceTitle}>Evidencia (archivo obligatorio)</div>
+                  <div className={styles.evidenceTitle}>Evidencia 📷</div>
                   {editCurrentUrl && (
                     <button
                       type="button"
@@ -1760,7 +1797,7 @@ export default function ObservacionesPage() {
                 <div
                   className={`${styles.evidenceBlock} ${closeInvalid.evidencia ? styles.inputErrorBlock : ""}`}
                 >
-                  <div className={styles.evidenceTitle}>Evidencia (archivo o URL) *</div>
+                  <div className={styles.evidenceTitle}>Evidencia 📷 *</div>
                   <div className={styles.fileRow}>
                   <input
                     id="evidencia-file-close"
@@ -1776,20 +1813,6 @@ export default function ObservacionesPage() {
                       {closeFile ? closeFile.name : "Ningún archivo seleccionado"}
                     </span>
                   </div>
-
-                  <div className={styles.helperText}>
-                    Si subes imagen, se guarda en Storage (bucket: <b>evidencias</b>) y se registra la URL.
-                  </div>
-
-                  <label className={styles.field}>
-                    <span className={styles.label}>o pega URL (si no subirás archivo)</span>
-                  <input
-                    value={closeUrl}
-                    onChange={(e) => setCloseUrl(e.target.value)}
-                    placeholder="https://..."
-                    className={`${styles.input} ${closeInvalid.evidencia ? styles.inputError : ""}`}
-                  />
-                </label>
               </div>
 
                 <div className={styles.modalActions}>
