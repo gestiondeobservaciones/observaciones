@@ -831,10 +831,11 @@ export default function PublicoPage() {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              width: "min(460px, 94vw)",
+              width: "min(368px, 94vw)",
               border: "1px solid rgba(34,197,94,0.35)",
               borderRadius: 18,
-              padding: 18,
+              padding: 14,
+              position: "relative",
               backgroundImage:
                 'linear-gradient(rgba(2,6,23,0.55), rgba(2,6,23,0.55)), url("https://satljniaasognjpuncel.supabase.co/storage/v1/object/public/assets/fondos/fodo%2001.jpg")',
               backgroundSize: "cover",
@@ -843,6 +844,23 @@ export default function PublicoPage() {
               color: "#e2e8f0",
             }}
           >
+            <button
+              onClick={closeLogin}
+              style={{
+                position: "absolute",
+                top: 10,
+                right: 10,
+                padding: "6px 10px",
+                borderRadius: 10,
+                border: "1px solid rgba(148,163,184,0.4)",
+                background: "rgba(15,23,42,0.7)",
+                color: "#e2e8f0",
+                fontWeight: 800,
+                cursor: "pointer",
+              }}
+            >
+              Cerrar
+            </button>
             <img
               src="https://satljniaasognjpuncel.supabase.co/storage/v1/object/public/assets/Img/bienvenidos.png"
               alt="Bienvenidos"
@@ -851,26 +869,12 @@ export default function PublicoPage() {
                 height: "auto",
                 display: "block",
                 borderRadius: 12,
+                marginTop: 34,
                 marginBottom: 10,
               }}
             />
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <h1 style={{ margin: "4px 0 0", fontSize: 22, color: "#e2e8f0" }}>Ingresar</h1>
-              <div style={{ flex: 1 }} />
-              <button
-                onClick={closeLogin}
-                style={{
-                  padding: "6px 10px",
-                  borderRadius: 10,
-                  border: "1px solid rgba(148,163,184,0.4)",
-                  background: "rgba(15,23,42,0.7)",
-                  color: "#e2e8f0",
-                  fontWeight: 800,
-                  cursor: "pointer",
-                }}
-              >
-                Cerrar
-              </button>
             </div>
 
             <form onSubmit={onSubmitLogin} style={{ display: "grid", gap: 12, marginTop: 14 }}>
