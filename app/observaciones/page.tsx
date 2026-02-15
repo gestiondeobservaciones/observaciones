@@ -682,7 +682,7 @@ export default function ObservacionesPage() {
   }
 
   const pageBg =
-    'url("https://whxeijdmxfteizyabtwi.supabase.co/storage/v1/object/public/assets/fondos/fondo%20cerro.jpg")';
+    'url("https://satljniaasognjpuncel.supabase.co/storage/v1/object/public/assets/fondos/fondo%20cerro.jpg")';
   const cardBg = "white";
 
   if (loading) {
@@ -1435,9 +1435,6 @@ export default function ObservacionesPage() {
                       {newFile ? newFile.name : "Ningún archivo seleccionado"}
                     </span>
                   </div>
-                  <div className={styles.helperText}>
-                    Si subes una imagen, se guarda en Storage (bucket: <b>evidencias</b>) y se registra la URL.
-                  </div>
                   {newUploadUrl && (
                     <div className={styles.helperText}>
                       ✅ URL generada:{" "}
@@ -1491,8 +1488,8 @@ export default function ObservacionesPage() {
           }}
           className={styles.modalOverlay}
         >
-          <div onClick={(e) => e.stopPropagation()} className={`${styles.modalPanel} ${styles.editModalPanel}`}>
-            <div className={`${styles.card} ${styles.modalCardTight} ${styles.editCardCompact}`} role="dialog" aria-modal="true">
+          <div onClick={(e) => e.stopPropagation()} style={{ width: "min(860px, 96vw)" }} className={styles.modalPanel}>
+            <div className={`${styles.card} ${styles.modalCardTight}`} role="dialog" aria-modal="true">
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                 <div style={{ fontWeight: 900, color: "#e2e8f0", fontSize: 18 }}>Editar observación</div>
                 <div style={{ flex: 1 }} />
@@ -1514,7 +1511,7 @@ export default function ObservacionesPage() {
               </div>
 
               {editError && <div className={styles.errorBox}>{editError}</div>}
-              <form onSubmit={guardarEdicion} className={`${styles.form} ${styles.editFormCompact}`}>
+              <form onSubmit={guardarEdicion} className={styles.form}>
                 <div className={styles.twoCol}>
                   <label className={styles.field}>
                     <span className={styles.label}>Responsable</span>
@@ -1585,13 +1582,13 @@ export default function ObservacionesPage() {
                     onChange={(e) => setEditDescripcion(e.target.value)}
                     placeholder="Describe la observación..."
                     rows={3}
-                    className={`${styles.input} ${styles.textarea} ${styles.editTextareaCompact} ${
+                    className={`${styles.input} ${styles.textarea} ${
                       editInvalid.desc ? styles.inputError : ""
                     }`}
                   />
                 </label>
 
-                <div className={`${styles.evidenceBlock} ${styles.editEvidenceCompact}`}>
+                <div className={styles.evidenceBlock}>
                   <div className={styles.evidenceTitle}>Evidencia (archivo opcional)</div>
                   {editCurrentUrl && (
                     <div className={styles.helperText}>
@@ -1619,10 +1616,11 @@ export default function ObservacionesPage() {
                           src={editCurrentUrl}
                           alt="Evidencia actual"
                           style={{
+                            width: 120,
+                            height: 120,
                             objectFit: "cover",
                             borderRadius: 8,
                           }}
-                          className={styles.editThumb}
                         />
                       </button>
                     </div>
@@ -1642,9 +1640,6 @@ export default function ObservacionesPage() {
                     <span className={styles.fileName}>
                       {editFile ? editFile.name : "Ningún archivo seleccionado"}
                     </span>
-                  </div>
-                  <div className={styles.helperText}>
-                    Si subes una imagen, se guarda en Storage (bucket: <b>evidencias</b>) y se actualiza la URL.
                   </div>
                   {editUploadUrl && (
                     <div className={styles.helperText}>

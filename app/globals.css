@@ -1,4 +1,4 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 
 :root {
   --background: #ffffff;
@@ -22,7 +22,7 @@
 body {
   background-color: var(--background);
   background-image: linear-gradient(rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.45)),
-    url("https://whxeijdmxfteizyabtwi.supabase.co/storage/v1/object/public/assets/fondos/fondo%20cerro.jpg");
+    url("https://satljniaasognjpuncel.supabase.co/storage/v1/object/public/assets/fondos/fondo%20cerro.jpg");
   background-size: cover;
   background-position: center top;
   background-repeat: no-repeat;
@@ -40,3 +40,4 @@ body {
     background-attachment: fixed;
   }
 }
+

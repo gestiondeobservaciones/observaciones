@@ -294,32 +294,6 @@
   font-size: 11px;
 }
 
-.editModalPanel {
-  width: min(820px, 95vw);
-}
-
-.editCardCompact {
-  padding: 16px;
-}
-
-.editFormCompact {
-  gap: 14px;
-}
-
-.editTextareaCompact {
-  min-height: 110px;
-}
-
-.editEvidenceCompact {
-  padding: 12px;
-  gap: 6px;
-}
-
-.editThumb {
-  width: 96px;
-  height: 96px;
-}
-
 .modalActions {
   display: flex;
   justify-content: flex-end;
@@ -379,32 +353,6 @@
 
   .modalCardTight .evidenceBlock {
     padding: 8px;
-  }
-
-  .editModalPanel {
-    width: min(720px, 94vw);
-  }
-
-  .editCardCompact {
-    padding: 12px;
-    border-radius: 14px;
-  }
-
-  .editFormCompact {
-    gap: 10px;
-  }
-
-  .editTextareaCompact {
-    min-height: 88px;
-  }
-
-  .editEvidenceCompact {
-    padding: 10px;
-  }
-
-  .editThumb {
-    width: 74px;
-    height: 74px;
   }
 
   .submit {

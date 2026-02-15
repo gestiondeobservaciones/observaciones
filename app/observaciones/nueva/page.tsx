@@ -184,7 +184,7 @@ export default function NuevaObservacionPage() {
         {perfilError && <div className={styles.errorBox}>{perfilError}</div>}
 
         <img
-          src="https://whxeijdmxfteizyabtwi.supabase.co/storage/v1/object/public/assets/fondos/volcan%20seguro.png"
+          src="https://satljniaasognjpuncel.supabase.co/storage/v1/object/public/assets/fondos/volcan%20seguro.png"
           alt="Volcán seguro"
           className={styles.emblem}
         />
@@ -309,7 +309,7 @@ export default function NuevaObservacionPage() {
         </div>
 
         <img
-          src="https://whxeijdmxfteizyabtwi.supabase.co/storage/v1/object/public/assets/fondos/la%20seguridad.png"
+          src="https://satljniaasognjpuncel.supabase.co/storage/v1/object/public/assets/fondos/la%20seguridad.png"
           alt="La seguridad"
           className={styles.footerImage}
         />

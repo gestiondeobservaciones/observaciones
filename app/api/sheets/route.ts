@@ -26,6 +26,14 @@ function getEnv(name: string) {
   return v;
 }
 
+function getEnvFirst(...names: string[]) {
+  for (const name of names) {
+    const v = process.env[name];
+    if (v) return v;
+  }
+  throw new Error(`Missing env ${names.join(" or ")}`);
+}
+
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as Payload;
@@ -33,7 +41,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "Invalid payload" }, { status: 400 });
     }
 
-    const keyFile = getEnv("GOOGLE_SA_KEY_PATH");
+    const keyFile = getEnvFirst("GOOGLE_SA_KEY_PATH", "GOOGLE_APPLICATION_CREDENTIALS");
     const spreadsheetId = getEnv("GOOGLE_SHEETS_ID");
     const sheetTab = getEnv("GOOGLE_SHEETS_TAB");
 

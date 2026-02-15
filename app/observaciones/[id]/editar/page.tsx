@@ -211,7 +211,7 @@ export default function EditarObservacionPage() {
         {perfilError && <div className={styles.errorBox}>{perfilError}</div>}
 
         <img
-          src="https://whxeijdmxfteizyabtwi.supabase.co/storage/v1/object/public/assets/fondos/volcan%20seguro.png"
+          src="https://satljniaasognjpuncel.supabase.co/storage/v1/object/public/assets/fondos/volcan%20seguro.png"
           alt="Volcán seguro"
           className={styles.emblem}
         />
@@ -283,7 +283,7 @@ export default function EditarObservacionPage() {
             </label>
 
             <div className={styles.evidenceBlock}>
-              <div className={styles.evidenceTitle}>Evidencia (archivo opcional)</div>
+              <div className={styles.evidenceTitle}>Evidencia (archivo obligatorio)</div>
               {currentUrl && (
                 <div className={styles.helperText}>
                   Actual:{" "}
@@ -355,7 +355,7 @@ export default function EditarObservacionPage() {
         </div>
 
         <img
-          src="https://whxeijdmxfteizyabtwi.supabase.co/storage/v1/object/public/assets/fondos/la%20seguridad.png"
+          src="https://satljniaasognjpuncel.supabase.co/storage/v1/object/public/assets/fondos/la%20seguridad.png"
           alt="La seguridad"
           className={styles.footerImage}
         />

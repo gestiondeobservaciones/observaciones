@@ -221,7 +221,7 @@ export default function PublicoPage() {
   }
 
   const pageBg =
-    'url("https://whxeijdmxfteizyabtwi.supabase.co/storage/v1/object/public/assets/fondos/cerro%205.jpg")';
+    'url("https://satljniaasognjpuncel.supabase.co/storage/v1/object/public/assets/fondos/cerro%205.jpg")';
   const cardBg = "white";
 
   if (loading) {
@@ -263,7 +263,7 @@ export default function PublicoPage() {
         }}
       >
         <img
-          src="https://whxeijdmxfteizyabtwi.supabase.co/storage/v1/object/public/assets/Img/BANNER%201A.png"
+          src="https://satljniaasognjpuncel.supabase.co/storage/v1/object/public/assets/Img/BANNER%201A.png"
           alt="Banner superior"
           style={{
             width: "100%",
@@ -273,7 +273,7 @@ export default function PublicoPage() {
           }}
         />
         <img
-          src="https://whxeijdmxfteizyabtwi.supabase.co/storage/v1/object/public/assets/Img/logo_animado.gif"
+          src="https://satljniaasognjpuncel.supabase.co/storage/v1/object/public/assets/Img/logo_animado.gif"
           alt="Logo animado"
           style={{
             position: "absolute",
@@ -287,7 +287,7 @@ export default function PublicoPage() {
           }}
         />
         <img
-          src="https://whxeijdmxfteizyabtwi.supabase.co/storage/v1/object/public/assets/Img/volcan_seguro_rotacion_eje_vertical.gif"
+          src="https://satljniaasognjpuncel.supabase.co/storage/v1/object/public/assets/Img/volcan_seguro_rotacion_eje_vertical.gif"
           alt="Volc&aacute;n seguro"
           style={{
             position: "absolute",
@@ -332,7 +332,7 @@ export default function PublicoPage() {
               color: "#0f172a",
             }}
           >
-            👷‍♂️ Bienvenido al sistema de observaciones👋
+            Bienvenido al sistema de observaciones
           </div>
           <div style={{ fontSize: 12, color: "#6b7280" }}>
             Vista p&uacute;blica &middot; Pendientes: {pendientes.length} &middot; Cerradas:{" "}
@@ -343,7 +343,7 @@ export default function PublicoPage() {
         <div style={{ flex: 1 }} />
 
         <img
-          src="https://whxeijdmxfteizyabtwi.supabase.co/storage/v1/object/public/assets/Img/volcan_cerro_loop_12s_fundido.gif"
+          src="https://satljniaasognjpuncel.supabase.co/storage/v1/object/public/assets/Img/volcan_cerro_loop_12s_fundido.gif"
           alt="Volc&aacute;n"
           style={{
             position: "absolute",
@@ -699,7 +699,7 @@ export default function PublicoPage() {
 
       <div style={{ maxWidth: 1100, margin: "18px auto 0", position: "relative" }}>
         <img
-          src="https://whxeijdmxfteizyabtwi.supabase.co/storage/v1/object/public/assets/Img/BANER%201B.png"
+          src="https://satljniaasognjpuncel.supabase.co/storage/v1/object/public/assets/Img/BANER%201B.png"
           alt="Banner inferior"
           style={{
             width: "100%",
@@ -726,7 +726,7 @@ export default function PublicoPage() {
           }}
         >
           <img
-            src="https://whxeijdmxfteizyabtwi.supabase.co/storage/v1/object/public/assets/fondos/la%20seguridad.png"
+            src="https://satljniaasognjpuncel.supabase.co/storage/v1/object/public/assets/fondos/la%20seguridad.png"
             alt="La seguridad"
             style={{
               width: "min(520px, 86vw)",
@@ -836,13 +836,24 @@ export default function PublicoPage() {
               borderRadius: 18,
               padding: 18,
               backgroundImage:
-                'linear-gradient(rgba(2,6,23,0.55), rgba(2,6,23,0.55)), url("https://whxeijdmxfteizyabtwi.supabase.co/storage/v1/object/public/assets/fondos/fodo%2001.jpg")',
+                'linear-gradient(rgba(2,6,23,0.55), rgba(2,6,23,0.55)), url("https://satljniaasognjpuncel.supabase.co/storage/v1/object/public/assets/fondos/fodo%2001.jpg")',
               backgroundSize: "cover",
               backgroundPosition: "center",
               boxShadow: "0 18px 40px rgba(2,6,23,0.45)",
               color: "#e2e8f0",
             }}
           >
+            <img
+              src="https://satljniaasognjpuncel.supabase.co/storage/v1/object/public/assets/Img/bienvenidos.png"
+              alt="Bienvenidos"
+              style={{
+                width: "100%",
+                height: "auto",
+                display: "block",
+                borderRadius: 12,
+                marginBottom: 10,
+              }}
+            />
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <h1 style={{ margin: "4px 0 0", fontSize: 22, color: "#e2e8f0" }}>Ingresar</h1>
               <div style={{ flex: 1 }} />
@@ -861,7 +872,6 @@ export default function PublicoPage() {
                 Cerrar
               </button>
             </div>
-            <p style={{ marginTop: 6, opacity: 0.85, color: "#cbd5f5" }}>DNI + contrase&ntilde;a</p>
 
             <form onSubmit={onSubmitLogin} style={{ display: "grid", gap: 12, marginTop: 14 }}>
               <label style={{ display: "grid", gap: 6 }}>
@@ -869,7 +879,7 @@ export default function PublicoPage() {
                 <input
                   value={loginDni}
                   onChange={(e) => setLoginDni(e.target.value)}
-                  placeholder="60615625"
+                  placeholder="Ingresa tu DNI"
                   inputMode="numeric"
                   style={{
                     padding: 12,

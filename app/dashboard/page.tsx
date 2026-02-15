@@ -122,6 +122,7 @@ async function exportSvgToPng(
   name: string,
   summaryLines: string[] = [],
   title = "",
+  size?: { width: number; height: number },
 ) {
   const svg = document.getElementById(svgId) as SVGSVGElement | null;
   if (!svg) return;
@@ -132,8 +133,10 @@ async function exportSvgToPng(
   const img = new Image();
   img.onload = () => {
     const canvas = document.createElement("canvas");
-    const baseWidth = svg.viewBox.baseVal.width || svg.clientWidth || 800;
-    const baseHeight = svg.viewBox.baseVal.height || svg.clientHeight || 400;
+    const svgWidth = svg.viewBox.baseVal.width || svg.clientWidth || 800;
+    const svgHeight = svg.viewBox.baseVal.height || svg.clientHeight || 400;
+    const baseWidth = size?.width || svgWidth;
+    const baseHeight = size?.height || svgHeight;
     const extraTop = title ? 46 : 0;
     const extraBottom = summaryLines.length ? 66 : 0;
     canvas.width = baseWidth;
@@ -150,7 +153,7 @@ async function exportSvgToPng(
       ctx.textAlign = "start";
     }
 
-    ctx.drawImage(img, 0, extraTop);
+    ctx.drawImage(img, 0, extraTop, baseWidth, baseHeight);
     if (summaryLines.length) {
       ctx.fillStyle = "rgba(15,23,42,0.9)";
       ctx.fillRect(0, extraTop + baseHeight, baseWidth, extraBottom);
@@ -321,8 +324,15 @@ export default function DashboardPage() {
 
   const severity = useMemo(() => {
     const map = { bajo: 0, medio: 0, alto: 0 };
-    for (const o of filtered) map[o.categoria] += 1;
-    return map;
+    for (const o of filtered) {
+      if (o.estado !== "pendiente") continue;
+      map[o.categoria] += 1;
+    }
+    const total = map.bajo + map.medio + map.alto;
+    const order = (Object.keys(map) as Array<keyof typeof map>)
+      .map((k) => ({ k, v: map[k] }))
+      .sort((a, b) => b.v - a.v);
+    return { ...map, total, order };
   }, [filtered]);
 
   return (
@@ -573,12 +583,12 @@ Observaciones: {v}
                 </button>
               </div>
             </div>
-            <svg id="chart-users" viewBox="0 0 640 330" className={styles.chartSvg}>
-              <rect x="0" y="0" width="640" height="330" fill="transparent" />
-              <g transform="translate(52,16)">
+            <svg id="chart-users" viewBox="0 0 700 420" className={styles.chartSvg}>
+              <rect x="0" y="0" width="700" height="420" fill="transparent" />
+              <g transform="translate(36,12)">
                 {(() => {
-                  const w = 536;
-                  const h = 270;
+                  const w = 628;
+                  const h = 335;
                   const max = Math.max(1, ...usersBars.map((u) => Math.max(u.created, u.closed)));
                   const groupW = w / Math.max(1, usersBars.length);
                   return (
@@ -586,7 +596,7 @@ Observaciones: {v}
                       <line x1={0} y1={h} x2={w} y2={h} stroke="#2d3748" strokeWidth={1} />
                       {usersBars.map((u, i) => {
                         const slotX = i * groupW;
-                        const blueW = Math.max(14, Math.min(34, groupW - 12));
+                        const blueW = Math.max(18, Math.min(44, groupW - 14));
                         const yellowW = Math.max(8, Math.floor(blueW * 0.58));
                         const centerX = slotX + groupW / 2;
                         const blueX = centerX - blueW / 2;
@@ -595,7 +605,16 @@ Observaciones: {v}
                         const hClosed = (u.closed / max) * (h - 22);
                         const yCreated = h - hCreated;
                         const yClosed = h - hClosed;
-                        const shortName = u.user.length > 12 ? `${u.user.slice(0, 12)}...` : u.user;
+                        const words = u.user.split(" ").filter(Boolean);
+                        const firstLineRaw = words[0] || u.user;
+                        const secondLineRaw = words.slice(1).join(" ");
+                        const firstLine =
+                          firstLineRaw.length > 12 ? `${firstLineRaw.slice(0, 12)}...` : firstLineRaw;
+                        const secondLine = secondLineRaw
+                          ? secondLineRaw.length > 12
+                            ? `${secondLineRaw.slice(0, 12)}...`
+                            : secondLineRaw
+                          : "";
                         return (
                           <g key={u.user}>
                             <rect
@@ -628,12 +647,14 @@ Cerradas: {u.closed}
                             </rect>
                             <text
                               x={centerX}
-                              y={h + 20}
+                              y={h + 22}
                               textAnchor="middle"
-                              fontSize="11.5"
+                              fontSize="14"
+                              fontWeight="700"
                               fill="#cbd5f5"
                             >
-                              {shortName}
+                              <tspan x={centerX}>{firstLine}</tspan>
+                              {secondLine ? <tspan x={centerX} dy="15">{secondLine}</tspan> : null}
                             </text>
                           </g>
                         );
@@ -690,11 +711,11 @@ Cerradas: {u.closed}
                 </button>
               </div>
             </div>
-            <svg id="chart-time" viewBox="0 0 640 330" className={styles.chartSvg}>
-              <g transform="translate(42,16)">
+            <svg id="chart-time" viewBox="0 0 700 370" className={styles.chartSvg}>
+              <g transform="translate(36,14)">
                 {(() => {
-                  const w = 556;
-                  const h = 270;
+                  const w = 628;
+                  const h = 305;
                   const max = Math.max(1, ...series.created, ...series.closed);
                   const step = series.labels.length > 1 ? w / (series.labels.length - 1) : w;
                   const points = series.created.map((v, i) => `${i * step},${h - (v / max) * (h - 20)}`).join(" ");
@@ -702,13 +723,13 @@ Cerradas: {u.closed}
                   return (
                     <>
                       <line x1={0} y1={h} x2={w} y2={h} stroke="#2d3748" strokeWidth={1.2} />
-                      <polyline points={points} fill="none" stroke="#4B8BBE" strokeWidth={3.5} />
-                      <polyline points={points2} fill="none" stroke="#FFE873" strokeWidth={3.5} />
+                      <polyline points={points} fill="none" stroke="#4B8BBE" strokeWidth={5} />
+                      <polyline points={points2} fill="none" stroke="#FFE873" strokeWidth={5} />
                       {series.created.map((v, i) => {
                         const x = i * step;
                         const y = h - (v / max) * (h - 20);
                         return (
-                          <circle key={`c-${series.labels[i]}`} cx={x} cy={y} r={4} fill="#4B8BBE" stroke="#0b1220" strokeWidth={1}>
+                          <circle key={`c-${series.labels[i]}`} cx={x} cy={y} r={4.6} fill="#4B8BBE" stroke="#0b1220" strokeWidth={1}>
                             <title>
                               {formatPeriodoLabel(series.labels[i], intervalo)}
 Nuevas: {v}
@@ -720,7 +741,7 @@ Nuevas: {v}
                         const x = i * step;
                         const y = h - (v / max) * (h - 20);
                         return (
-                          <circle key={`z-${series.labels[i]}`} cx={x} cy={y} r={4} fill="#FFE873" stroke="#0b1220" strokeWidth={1}>
+                          <circle key={`z-${series.labels[i]}`} cx={x} cy={y} r={4.6} fill="#FFE873" stroke="#0b1220" strokeWidth={1}>
                             <title>
                               {formatPeriodoLabel(series.labels[i], intervalo)}
 Cerradas: {v}
@@ -729,7 +750,7 @@ Cerradas: {v}
                         );
                       })}
                       {series.labels.map((l, i) => (
-                        <text key={l} x={i * step} y={h + 20} fontSize="10.5" fill="#cbd5f5" textAnchor="middle">
+                        <text key={l} x={i * step} y={h + 26} fontSize="16" fill="#cbd5f5" textAnchor="middle" fontWeight="700">
                           {formatPeriodoLabel(l, intervalo)}
                         </text>
                       ))}
@@ -748,22 +769,40 @@ Cerradas: {v}
             </div>
           </div>
 
-          {/* 4. Severidad 3D */}
+          {/* 4. Severidad en piramide */}
           <div className={styles.card}>
             <div className={styles.cardHeader}>
               <div>
                 <h3>Distribucion por severidad</h3>
-                <span>Bloques 3D apilados</span>
+                <span>Piramide dinamica (100% de pendientes)</span>
               </div>
               <div className={styles.exportButtons}>
-                <button onClick={() => exportSvgToPng("chart-sev", "severidad.png")}>PNG</button>
+                <button
+                  onClick={() => {
+                    const top = severity.order[0] || { k: "sin datos", v: 0 };
+                    exportSvgToPng(
+                      "chart-sev",
+                      "severidad.png",
+                      [
+                        `Total pendientes: ${severity.total}`,
+                        `Categoria con mayor incidencia: ${String(top.k).toUpperCase()} (${top.v})`,
+                      ],
+                      "GRAFICA DE DISTRIBUCION POR SEVERIDAD",
+                      { width: 640, height: 360 },
+                    );
+                  }}
+                >
+                  PNG
+                </button>
                 <button
                   onClick={() =>
                     downloadCsv("severidad.csv", [
-                      ["categoria", "total"],
-                      ["bajo", severity.bajo],
-                      ["medio", severity.medio],
-                      ["alto", severity.alto],
+                      ["categoria", "total", "porcentaje_pendientes"],
+                      ...severity.order.map((x) => [
+                        x.k,
+                        x.v,
+                        severity.total ? (x.v / severity.total).toFixed(4) : "0.0000",
+                      ]),
                     ])
                   }
                 >
@@ -771,53 +810,151 @@ Cerradas: {v}
                 </button>
               </div>
             </div>
-                        <svg id="chart-sev" viewBox="0 0 360 280" className={styles.chartSvg}>
+            <svg id="chart-sev" viewBox="0 0 360 280" className={styles.chartSvg}>
+              <defs>
+                <filter id="sevPyramidShadow" x="-20%" y="-20%" width="140%" height="160%">
+                  <feDropShadow dx="0" dy="2.4" stdDeviation="2.1" floodColor="#020617" floodOpacity="0.32" />
+                </filter>
+                <linearGradient id="sevGloss" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="rgba(255,255,255,0.14)" />
+                  <stop offset="50%" stopColor="rgba(255,255,255,0.06)" />
+                  <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+                </linearGradient>
+              </defs>
               {(() => {
-                const total = Math.max(1, severity.bajo + severity.medio + severity.alto);
-                const baseW = 200;
-                const baseD = 60;
-                const baseH = 120;
-                const scale = (v: number) => Math.max(20, (v / total) * baseH);
-                const blocks = [
-                  { k: "bajo", v: severity.bajo, top: "#5a9ccf", sideL: "#3f77a7", sideR: "#2e5f8a", text: "#f8fafc" },
-                  { k: "medio", v: severity.medio, top: "#3e7fb8", sideL: "#2f5e8e", sideR: "#22496f", text: "#f8fafc" },
-                  { k: "alto", v: severity.alto, top: "#f4df6d", sideL: "#d8bb2b", sideR: "#b89512", text: "#111827" },
+                const levels = severity.order;
+                const levelPalette = [
+                  { fill: "#3b5fa0", stroke: "#2f4f88", text: "#f8fafc" },
+                  { fill: "#88a2cf", stroke: "#5f7fb5", text: "#f1f5f9" },
+                  { fill: "#bf9300", stroke: "#8f6e00", text: "#0f172a" },
                 ];
-                let y = 210;
+                const segments = levels.map((lvl, i) => ({ ...lvl, ...levelPalette[i] }));
+                const cx = 180;
+                const yBase = 238;
+
+                const pct = (v: number) => (severity.total ? (v / severity.total) * 100 : 0);
+                const wBig = Math.max(210, 230 + pct(levels[0]?.v ?? 0) * 0.75);
+                const yBaseBig = yBase;
+                const yApexBig = 64;
+
+                // Triangulos similares (misma pendiente lateral) para mantener simetria real.
+                const hBig = yBaseBig - yApexBig;
+                const ratio = wBig / hBig;
+
+                const hMid = hBig * 0.72;
+                const yApexMid = yApexBig + 16;
+                const yBaseMid = yApexMid + hMid;
+                const wMid = hMid * ratio;
+
+                const hSmall = hBig * 0.4;
+                const yApexSmall = yApexBig + 34;
+                const yBaseSmall = yApexSmall + hSmall;
+                const wSmall = hSmall * ratio;
+
+                const yBaseCenter = yBaseBig - 22;
+                const yMidCenter = yBaseMid - 18;
+                const yTopCenter = (yApexSmall + yBaseSmall * 2) / 3 + 2;
 
                 return (
-                  <g transform="translate(80,0)">
-                    {blocks.map((b, i) => {
-                      const h = scale(b.v);
-                      const w = baseW - i * 24;
-                      const d = baseD - i * 6;
-                      const x = i * 12;
-                      const top = y - h;
-                      const p1 = `${x},${top}`;
-                      const p2 = `${x + w},${top}`;
-                      const p3 = `${x + w + d},${top - d / 2}`;
-                      const p4 = `${x + d},${top - d / 2}`;
-                      const side1 = `${x + w},${top} ${x + w},${y} ${x + w + d},${y - d / 2} ${x + w + d},${
-                        top - d / 2
-                      }`;
-                      const side2 = `${x},${top} ${x},${y} ${x + d},${y - d / 2} ${x + d},${top - d / 2}`;
-                      y = top;
+                  <g>
+                    {/* base (mayor) */}
+                    <g filter="url(#sevPyramidShadow)">
+                      <polygon
+                        points={`${cx - wBig / 2},${yBaseBig} ${cx + wBig / 2},${yBaseBig} ${cx},${yApexBig}`}
+                        fill={segments[0].fill}
+                        fillOpacity="0.9"
+                        stroke={segments[0].stroke}
+                        strokeWidth="1.5"
+                      />
+                      <polygon
+                        points={`${cx - wBig / 2},${yBaseBig} ${cx + wBig / 2},${yBaseBig} ${cx},${yApexBig}`}
+                        fill="url(#sevGloss)"
+                      />
+                    </g>
+                    {/* medio */}
+                    <g filter="url(#sevPyramidShadow)">
+                      <polygon
+                        points={`${cx - wMid / 2},${yBaseMid} ${cx + wMid / 2},${yBaseMid} ${cx},${yApexMid}`}
+                        fill={segments[1].fill}
+                        fillOpacity="0.94"
+                        stroke={segments[1].stroke}
+                        strokeWidth="1.5"
+                      />
+                      <polygon
+                        points={`${cx - wMid / 2},${yBaseMid} ${cx + wMid / 2},${yBaseMid} ${cx},${yApexMid}`}
+                        fill="url(#sevGloss)"
+                      />
+                    </g>
+                    {/* punta (menor) */}
+                    <g filter="url(#sevPyramidShadow)">
+                      <polygon
+                        points={`${cx - wSmall / 2},${yBaseSmall} ${cx + wSmall / 2},${yBaseSmall} ${cx},${yApexSmall}`}
+                        fill={segments[2].fill}
+                        fillOpacity="0.95"
+                        stroke={segments[2].stroke}
+                        strokeWidth="1.5"
+                      />
+                      <polygon
+                        points={`${cx - wSmall / 2},${yBaseSmall} ${cx + wSmall / 2},${yBaseSmall} ${cx},${yApexSmall}`}
+                        fill="url(#sevGloss)"
+                      />
+                    </g>
+                    <polygon
+                      points={`${cx - wBig / 2},${yBaseBig} ${cx + wBig / 2},${yBaseBig} ${cx},${yApexBig}`}
+                      fill="none"
+                      stroke="rgba(226,232,240,0.26)"
+                      strokeWidth="1.2"
+                    />
 
-                      return (
-                        <g key={b.k}>
-                          <polygon points={side2} fill={b.sideL} stroke="#0b1220" strokeWidth="1" />
-                          <polygon points={side1} fill={b.sideR} stroke="#0b1220" strokeWidth="1" />
-                          <polygon points={`${p1} ${p2} ${p3} ${p4}`} fill={b.top} stroke="#0b1220" strokeWidth="1.2" />
-                          <text x={x + w / 2} y={top - 6} textAnchor="middle" fontSize="12" fontWeight="700" fill={b.text}>
-                            {b.k} - {b.v}
-                          </text>
-                        </g>
-                      );
-                    })}
+                    <text
+                      x={cx}
+                      y={yBaseCenter}
+                      textAnchor="middle"
+                      fontSize="11.5"
+                      fontWeight="800"
+                      fill="#f8fafc"
+                    >
+                      <tspan x={cx}>{segments[0].k.toUpperCase()} {segments[0].v}</tspan>
+                      <tspan x={cx} dy="11">({pct(segments[0].v).toFixed(1)}%)</tspan>
+                    </text>
+                    <text
+                      x={cx}
+                      y={yMidCenter}
+                      textAnchor="middle"
+                      fontSize="11"
+                      fontWeight="800"
+                      fill="#f1f5f9"
+                    >
+                      <tspan x={cx}>{segments[1].k.toUpperCase()} {segments[1].v}</tspan>
+                      <tspan x={cx} dy="10.5">({pct(segments[1].v).toFixed(1)}%)</tspan>
+                    </text>
+                    <text
+                      x={cx}
+                      y={yTopCenter}
+                      textAnchor="middle"
+                      fontSize="9.8"
+                      fontWeight="800"
+                      fill="#0f172a"
+                    >
+                      <tspan x={cx}>{segments[2].k.toUpperCase()} {segments[2].v}</tspan>
+                      <tspan x={cx} dy="9.5">({pct(segments[2].v).toFixed(1)}%)</tspan>
+                    </text>
                   </g>
                 );
               })()}
             </svg>
+            <div className={styles.legend}>
+              {severity.order.map((x, i) => (
+                <span key={x.k}>
+                  <i
+                    style={{
+                      background: i === 0 ? "#4B8BBE" : i === 1 ? "#88a2cf" : "#bf9300",
+                    }}
+                  />{" "}
+                  {x.k.toUpperCase()} {x.v} ({severity.total ? ((x.v / severity.total) * 100).toFixed(1) : "0.0"}%)
+                </span>
+              ))}
+            </div>
           </div>
         </section>
       )}
