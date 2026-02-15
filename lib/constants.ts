@@ -9,6 +9,7 @@ export const AREAS = [
   "Reactivos",
   "Galpon zn",
   "Galpon pb",
+  "Otros",
 ] as const;
 
 export const CATEGORIAS = ["bajo", "medio", "alto"] as const;

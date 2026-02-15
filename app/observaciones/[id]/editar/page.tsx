@@ -25,6 +25,7 @@ type Obs = {
   plazo: string;
   descripcion: string;
   evidencia_url: string | null;
+  creado_por: string | null;
 };
 
 export default function EditarObservacionPage() {
@@ -36,6 +37,8 @@ export default function EditarObservacionPage() {
   const [perfilError, setPerfilError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [actorEmail, setActorEmail] = useState("");
+  const isAdmin = perfil?.rol === "admin";
 
   // Form
   const [area, setArea] = useState<string>(AREAS[0] || "chancado");
@@ -91,10 +94,15 @@ export default function EditarObservacionPage() {
         return;
       }
       setPerfil(perfilData as Perfil);
+      const adminActor = (perfilData as Perfil).rol === "admin";
+      const actor = (session.user.email || `${(perfilData as Perfil).dni}@observaciones.local`)
+        .trim()
+        .toLowerCase();
+      setActorEmail(actor);
 
       const { data: obs, error: obsErr } = await supabase
         .from("observaciones")
-        .select("id,estado,responsable,area,equipo_lugar,categoria,plazo,descripcion,evidencia_url")
+        .select("id,estado,responsable,area,equipo_lugar,categoria,plazo,descripcion,evidencia_url,creado_por")
         .eq("id", obsId)
         .single();
 
@@ -106,6 +114,13 @@ export default function EditarObservacionPage() {
 
       if (obs.estado !== "pendiente") {
         alert("Solo se pueden editar observaciones pendientes.");
+        router.push("/observaciones");
+        return;
+      }
+
+      const owner = (obs.creado_por || "").trim().toLowerCase();
+      if (!adminActor && (!owner || owner !== actor)) {
+        alert("No autorizado: solo el creador o admin puede editar la observación.");
         router.push("/observaciones");
         return;
       }
@@ -158,6 +173,10 @@ export default function EditarObservacionPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!perfil) return;
+    if (!isAdmin && !actorEmail) {
+      alert("No se pudo validar el usuario actual. Vuelve a iniciar sesión.");
+      return;
+    }
 
     if (!equipoLugar.trim()) {
       alert("Completa Equipo / Lugar.");
@@ -186,9 +205,15 @@ export default function EditarObservacionPage() {
         evidencia_url: evidenciaFinal,
       };
 
-      const { error } = await supabase.from("observaciones").update(payload).eq("id", obsId);
+      const baseUpdate = supabase.from("observaciones").update(payload).eq("id", obsId).select("id");
+      const query = isAdmin ? baseUpdate : baseUpdate.eq("creado_por", actorEmail);
+      const { data: updated, error } = await query.maybeSingle();
       if (error) {
         alert("Error guardando: " + error.message);
+        return;
+      }
+      if (!updated) {
+        alert("No autorizado: solo el creador o admin puede editar la observación.");
         return;
       }
 

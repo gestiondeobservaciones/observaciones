@@ -332,7 +332,7 @@ export default function PublicoPage() {
               color: "#0f172a",
             }}
           >
-            Bienvenido al sistema de observaciones
+            Reporte de condiciones subestandares
           </div>
           <div style={{ fontSize: 12, color: "#6b7280" }}>
             Vista p&uacute;blica &middot; Pendientes: {pendientes.length} &middot; Cerradas:{" "}

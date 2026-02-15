@@ -70,18 +70,59 @@ export async function POST(req: Request) {
       body.data.cierre_descripcion ?? "",
     ];
 
-    await sheets.spreadsheets.values.append({
-      spreadsheetId,
-      range: sheetTab,
-      valueInputOption: "RAW",
-      insertDataOption: "INSERT_ROWS",
-      requestBody: { values: [row] },
-    });
+    if (body.action === "create") {
+      await sheets.spreadsheets.values.append({
+        spreadsheetId,
+        range: sheetTab,
+        valueInputOption: "RAW",
+        insertDataOption: "INSERT_ROWS",
+        requestBody: { values: [row] },
+      });
+    } else {
+      const existing = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: `${sheetTab}!A2:O`,
+      });
+
+      const rows = existing.data.values ?? [];
+      let rowIndex = -1;
+
+      for (let i = 0; i < rows.length; i++) {
+        const current = rows[i];
+        const currentAction = current[1];
+        const currentId = current[2];
+        if (currentId !== body.data.id) continue;
+
+        if (rowIndex === -1) rowIndex = i + 2;
+        if (currentAction === "create") {
+          rowIndex = i + 2;
+          break;
+        }
+      }
+
+      if (rowIndex === -1) {
+        await sheets.spreadsheets.values.append({
+          spreadsheetId,
+          range: sheetTab,
+          valueInputOption: "RAW",
+          insertDataOption: "INSERT_ROWS",
+          requestBody: { values: [row] },
+        });
+      } else {
+        await sheets.spreadsheets.values.update({
+          spreadsheetId,
+          range: `${sheetTab}!A${rowIndex}:O${rowIndex}`,
+          valueInputOption: "RAW",
+          requestBody: { values: [row] },
+        });
+      }
+    }
 
     return NextResponse.json({ ok: true });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json(
-      { ok: false, error: err?.message || "Unknown error" },
+      { ok: false, error: errorMessage },
       { status: 500 }
     );
   }
