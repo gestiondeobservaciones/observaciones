@@ -230,7 +230,7 @@ export default function ObservacionesPage() {
     if (userErr || !user) throw new Error("Sesión inválida. Vuelve a iniciar sesión.");
 
     const safeName = file.name.replace(/[^\w.\-]+/g, "_");
-    const path = ${user.id}/${Date.now()}_${safeName};
+    const path = `${user.id}/${Date.now()}_${safeName}`;
 
     const up = await supabase.storage.from("evidencias").upload(path, file, {
       cacheControl: "3600",
