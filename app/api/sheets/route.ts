@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { google } from "googleapis";
+import fs from "fs";
+import os from "os";
+import path from "path";
 
 type Payload = {
   action: "create" | "close" | "edit";
@@ -34,6 +37,17 @@ function getEnvFirst(...names: string[]) {
   throw new Error(`Missing env ${names.join(" or ")}`);
 }
 
+function ensureServiceAccountFile() {
+  const json = process.env.GOOGLE_SA_KEY_JSON;
+  if (!json) return null;
+
+  const filePath = path.join(os.tmpdir(), "google-sa.json");
+  if (!fs.existsSync(filePath)) {
+    fs.writeFileSync(filePath, json, "utf8");
+  }
+  return filePath;
+}
+
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as Payload;
@@ -41,7 +55,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "Invalid payload" }, { status: 400 });
     }
 
-    const keyFile = getEnvFirst("GOOGLE_SA_KEY_PATH", "GOOGLE_APPLICATION_CREDENTIALS");
+    const keyFile =
+      ensureServiceAccountFile() ??
+      getEnvFirst("GOOGLE_SA_KEY_PATH", "GOOGLE_APPLICATION_CREDENTIALS");
     const spreadsheetId = getEnv("GOOGLE_SHEETS_ID");
     const sheetTab = getEnv("GOOGLE_SHEETS_TAB");
 
