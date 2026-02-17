@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import ThumbImage from "@/components/ThumbImage";
 
 export default function ImageLightbox({
   src,
@@ -15,9 +16,10 @@ export default function ImageLightbox({
 
   return (
     <>
-      <img
+      <ThumbImage
         src={src}
         alt={alt}
+        thumbWidth={120}
         style={{
           maxWidth: 120,
           cursor: "zoom-in",

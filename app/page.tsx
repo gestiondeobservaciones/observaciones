@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import ThumbImage from "@/components/ThumbImage";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -485,13 +486,14 @@ export default function PublicoPage() {
                               cursor: "zoom-in",
                             }}
                           >
-                            <img
+                            <ThumbImage
                               src={o.evidencia_url}
                               alt="Evidencia"
+                              thumbWidth={110}
                               style={{
                                 width: 110,
                                 height: 110,
-                                objectFit: "cover",
+                                objectFit: "contain",
                                 borderRadius: 8,
                               }}
                             />
@@ -607,14 +609,15 @@ export default function PublicoPage() {
                                   cursor: "zoom-in",
                                 }}
                               >
-                                <img
+                                <ThumbImage
                                   src={o.evidencia_url}
                                   alt="Antes"
+                                  thumbWidth={108}
                                   style={{
                                     width: 108,
                                     height: 108,
                                     borderRadius: 10,
-                                    objectFit: "cover",
+                                    objectFit: "contain",
                                     display: "block",
                                   }}
                                 />
@@ -643,14 +646,15 @@ export default function PublicoPage() {
                                   cursor: "zoom-in",
                                 }}
                               >
-                                <img
+                                <ThumbImage
                                   src={o.cierre_evidencia_url}
                                   alt="Despu&eacute;s"
+                                  thumbWidth={108}
                                   style={{
                                     width: 108,
                                     height: 108,
                                     borderRadius: 10,
-                                    objectFit: "cover",
+                                    objectFit: "contain",
                                     display: "block",
                                   }}
                                 />

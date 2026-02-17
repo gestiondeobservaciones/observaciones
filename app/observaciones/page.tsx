@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabaseBrowser as supabase } from "@/lib/supabase-browser";
 import { AREAS, CATEGORIAS } from "@/lib/constants";
+import ThumbImage from "@/components/ThumbImage";
 import styles from "./nueva/page.module.css";
 
 type Perfil = {
@@ -215,6 +216,14 @@ export default function ObservacionesPage() {
 
   const pendientes = useMemo(() => data.filter((d) => d.estado === "pendiente"), [data]);
   const cerradas = useMemo(() => data.filter((d) => d.estado === "cerrada"), [data]);
+  const PAGE_SIZE = 20;
+  const [pendientesLimit, setPendientesLimit] = useState(PAGE_SIZE);
+  const [cerradasLimit, setCerradasLimit] = useState(PAGE_SIZE);
+
+  useEffect(() => {
+    setPendientesLimit(PAGE_SIZE);
+    setCerradasLimit(PAGE_SIZE);
+  }, [data.length]);
 
   function isOwner(obs: Obs | null) {
     if (!obs) return false;
@@ -927,7 +936,7 @@ export default function ObservacionesPage() {
             <div style={{ color: "#cbd5f5", fontSize: 13 }}>No hay pendientes.</div>
           ) : (
             <div style={{ display: "grid", gap: 12 }}>
-              {pendientes.map((o) => {
+              {pendientes.slice(0, pendientesLimit).map((o) => {
                 const s = getSemaforo(o.creado_en, o.plazo);
                 const pillTone = s.sem === "verde" ? "green" : s.sem === "amarillo" ? "yellow" : "red";
                 const canEditThis = canEdit(o);
@@ -990,15 +999,20 @@ export default function ObservacionesPage() {
                               borderRadius: 14,
                               padding: 3,
                               cursor: "zoom-in",
+                              width: 116,
+                              height: 116,
+                              display: "grid",
+                              placeItems: "center",
                             }}
                           >
-                            <img
+                            <ThumbImage
                               src={o.evidencia_url}
                               alt="Evidencia"
+                              thumbWidth={110}
                               style={{
                                 width: 110,
                                 height: 110,
-                                objectFit: "cover",
+                                objectFit: "contain",
                                 borderRadius: 8,
                               }}
                             />
@@ -1069,6 +1083,27 @@ export default function ObservacionesPage() {
               })}
             </div>
           )}
+
+          {pendientes.length > pendientesLimit && (
+            <div style={{ marginTop: 10, display: "flex", justifyContent: "center" }}>
+              <button
+                type="button"
+                onClick={() => setPendientesLimit((n) => n + PAGE_SIZE)}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: 10,
+                  border: "1px solid rgba(148,163,184,0.6)",
+                  background: "rgba(15,23,42,0.6)",
+                  color: "#e2e8f0",
+                  fontWeight: 800,
+                  fontSize: 12,
+                  cursor: "pointer",
+                }}
+              >
+                Cargar más
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Cerradas */}
@@ -1091,7 +1126,7 @@ export default function ObservacionesPage() {
             <div style={{ color: "#cbd5f5", fontSize: 13 }}>Aún no hay cerradas.</div>
           ) : (
             <div style={{ display: "grid", gap: 12 }}>
-              {cerradas.map((o) => (
+              {cerradas.slice(0, cerradasLimit).map((o) => (
                 <div
                   key={o.id}
                   style={{
@@ -1164,14 +1199,15 @@ export default function ObservacionesPage() {
                                   cursor: "zoom-in",
                                 }}
                               >
-                                <img
+                                <ThumbImage
                                   src={o.evidencia_url}
                                   alt="Antes"
+                                  thumbWidth={108}
                                   style={{
                                     width: 108,
                                     height: 108,
                                     borderRadius: 10,
-                                    objectFit: "cover",
+                                    objectFit: "contain",
                                     display: "block",
                                   }}
                                 />
@@ -1200,14 +1236,15 @@ export default function ObservacionesPage() {
                                   cursor: "zoom-in",
                                 }}
                               >
-                                <img
+                                <ThumbImage
                                   src={o.cierre_evidencia_url}
                                   alt="Después"
+                                  thumbWidth={108}
                                   style={{
                                     width: 108,
                                     height: 108,
                                     borderRadius: 10,
-                                    objectFit: "cover",
+                                    objectFit: "contain",
                                     display: "block",
                                   }}
                                 />
@@ -1273,6 +1310,27 @@ export default function ObservacionesPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {cerradas.length > cerradasLimit && (
+            <div style={{ marginTop: 10, display: "flex", justifyContent: "center" }}>
+              <button
+                type="button"
+                onClick={() => setCerradasLimit((n) => n + PAGE_SIZE)}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: 10,
+                  border: "1px solid rgba(148,163,184,0.6)",
+                  background: "rgba(15,23,42,0.6)",
+                  color: "#e2e8f0",
+                  fontWeight: 800,
+                  fontSize: 12,
+                  cursor: "pointer",
+                }}
+              >
+                Cargar más
+              </button>
             </div>
           )}
         </div>
@@ -1668,13 +1726,14 @@ export default function ObservacionesPage() {
                       }}
                       title="Ver evidencia"
                     >
-                      <img
+                      <ThumbImage
                         src={editCurrentUrl}
                         alt="Evidencia actual"
+                        thumbWidth={72}
                         style={{
                           width: 72,
                           height: 72,
-                          objectFit: "cover",
+                          objectFit: "contain",
                           borderRadius: 8,
                         }}
                       />
@@ -1845,6 +1904,7 @@ export default function ObservacionesPage() {
     </div>
   );
 }
+
 
 
 

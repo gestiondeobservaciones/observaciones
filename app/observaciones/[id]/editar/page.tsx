@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import ThumbImage from "@/components/ThumbImage";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { AREAS, CATEGORIAS } from "@/lib/constants";
@@ -331,13 +332,14 @@ export default function EditarObservacionPage() {
                       display: "inline-flex",
                     }}
                   >
-                    <img
+                    <ThumbImage
                       src={currentUrl}
                       alt="Evidencia actual"
+                      thumbWidth={120}
                       style={{
                         width: 120,
                         height: 120,
-                        objectFit: "cover",
+                        objectFit: "contain",
                         borderRadius: 8,
                       }}
                     />
