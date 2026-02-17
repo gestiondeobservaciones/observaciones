@@ -1,4 +1,5 @@
 "use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import ThumbImage from "@/components/ThumbImage";
