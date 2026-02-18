@@ -1,7 +1,6 @@
 "use client";
-"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import ThumbImage from "@/components/ThumbImage";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -122,7 +121,7 @@ function Pill({
   );
 }
 
-export default function PublicoPage() {
+function PublicoPageContent() {
   const router = useRouter();
   const params = useSearchParams();
   const nextUrl = useMemo(() => params.get("next") || "/observaciones", [params]);
@@ -951,5 +950,28 @@ export default function PublicoPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function PublicoPage() {
+  return (
+    <Suspense
+      fallback={
+        <main
+          style={{
+            minHeight: "100vh",
+            display: "grid",
+            placeItems: "center",
+            padding: 20,
+            color: "white",
+            background: "#0b1220",
+          }}
+        >
+          Cargando...
+        </main>
+      }
+    >
+      <PublicoPageContent />
+    </Suspense>
   );
 }
