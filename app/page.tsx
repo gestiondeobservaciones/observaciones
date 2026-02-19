@@ -475,7 +475,7 @@ function PublicoPageContent() {
                   style={{
                     border: `1px solid ${getRiesgoColor(o.categoria)}`,
                     borderRadius: 16,
-                    padding: isMobile ? 12 : 16,
+                    padding: 16,
                     background: "linear-gradient(180deg, #DCE6F2 0%, #C9D6E6 100%)",
                     boxShadow: "0 6px 16px rgba(15,23,42,0.08)",
                   }}
@@ -483,9 +483,9 @@ function PublicoPageContent() {
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: isMobile ? "1fr" : "1fr 120px 1fr",
+                      gridTemplateColumns: "1fr 120px 1fr",
                       gap: 12,
-                      alignItems: isMobile ? "start" : "center",
+                      alignItems: "center",
                     }}
                   >
                       <div style={{ display: "grid", gap: 6 }}>
