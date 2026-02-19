@@ -1002,14 +1002,14 @@ export default function ObservacionesPage() {
                           </span>
                         </div>
                         <div style={{ fontSize: 12, color: "#2563eb", fontWeight: 900 }}>
+                          FECHA CREACION:{" "}
+                          <span style={{ color: "#0f172a" }}>{formatDateDMY(o.creado_en)}</span>
+                        </div>
+                        <div style={{ fontSize: 12, color: "#2563eb", fontWeight: 900 }}>
                           PLAZO ESTIMADO:{" "}
                           <span style={{ color: "#0f172a" }}>
                             {getPlazoEstimadoDias(o.creado_en, o.plazo)} dias
                           </span>
-                        </div>
-                        <div style={{ fontSize: 12, color: "#2563eb", fontWeight: 900 }}>
-                          FECHA CREACION:{" "}
-                          <span style={{ color: "#0f172a" }}>{formatDateDMY(o.creado_en)}</span>
                         </div>
                       </div>
 
