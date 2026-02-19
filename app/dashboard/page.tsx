@@ -178,7 +178,7 @@ export default function DashboardPage() {
 
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [areas, setAreas] = useState<string[]>([]);
+  const [areaFilter, setAreaFilter] = useState("__all");
   const [cats, setCats] = useState<string[]>([]);
   const [estado, setEstado] = useState<"todas" | "pendiente" | "cerrada">("todas");
   const [topN, setTopN] = useState(10);
@@ -213,17 +213,28 @@ export default function DashboardPage() {
     load();
   }, []);
 
+  const areaOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const area of AREAS) {
+      map.set(normalizeAreaKey(area), formatAreaLabel(area));
+    }
+    for (const o of data) {
+      map.set(normalizeAreaKey(o.area), formatAreaLabel(o.area));
+    }
+    return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1], "es"));
+  }, [data]);
+
   const filtered = useMemo(() => {
     return data.filter((o) => {
       const creado = parseISO(o.creado_en);
       if (!creado) return false;
       if (!inRange(creado, from, to)) return false;
-      if (areas.length && !areas.includes(o.area)) return false;
+      if (areaFilter !== "__all" && normalizeAreaKey(o.area) !== areaFilter) return false;
       if (cats.length && !cats.includes(o.categoria)) return false;
       if (estado !== "todas" && o.estado !== estado) return false;
       return true;
     });
-  }, [data, from, to, areas, cats, estado]);
+  }, [data, from, to, areaFilter, cats, estado]);
 
   const totalCount = filtered.length;
 
@@ -353,29 +364,24 @@ export default function DashboardPage() {
       </section>
 
       <section className={styles.filters}>
-        <div className={styles.filterGroup}>
+        <div className={`${styles.filterGroup} ${styles.filterWide}`}>
           <label>Rango fechas</label>
-          <div className={styles.row}>
+          <div className={`${styles.row} ${styles.dateRow}`}>
             <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
             <input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
           </div>
         </div>
 
         <div className={styles.filterGroup}>
-          <label>Áreas</label>
-          <div className={styles.chips}>
-            {AREAS.map((a) => (
-              <button
-                key={a}
-                className={areas.includes(a) ? styles.chipActive : styles.chip}
-                onClick={() =>
-                  setAreas((prev) => (prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]))
-                }
-              >
-                {a}
-              </button>
+          <label>Área</label>
+          <select value={areaFilter} onChange={(e) => setAreaFilter(e.target.value)}>
+            <option value="__all">Todas</option>
+            {areaOptions.map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
             ))}
-          </div>
+          </select>
         </div>
 
         <div className={styles.filterGroup}>
@@ -395,10 +401,10 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className={styles.filterGroup}>
-          <label>Estado</label>
-          <div className={styles.row}>
-            <select value={estado} onChange={(e) => setEstado(e.target.value as any)}>
+        <div className={`${styles.filterGroup} ${styles.filterWide}`}>
+          <label>Estado / Intervalo / Top</label>
+          <div className={`${styles.row} ${styles.stateRow}`}>
+            <select value={estado} onChange={(e) => setEstado(e.target.value as "todas" | "pendiente" | "cerrada")}>
               <option value="todas">Todas</option>
               <option value="pendiente">Abiertas</option>
               <option value="cerrada">Cerradas</option>
