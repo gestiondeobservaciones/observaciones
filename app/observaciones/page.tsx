@@ -96,6 +96,27 @@ function getSemaforo(creadoEnISO: string, plazoStr: string): { sem: Semaforo; la
   return { sem: "verde", label: "En tiempo" };
 }
 
+function formatDateDMY(value: string | null | undefined) {
+  if (!value) return "-";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "-";
+  return d.toLocaleDateString("es-PE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+function getPlazoEstimadoDias(creadoEnISO: string, plazoStr: string) {
+  const creado = new Date(creadoEnISO);
+  const plazo = parsePlazoToDate(plazoStr);
+  if (!plazo || Number.isNaN(creado.getTime())) return "-";
+
+  const plazo0 = new Date(plazo.getFullYear(), plazo.getMonth(), plazo.getDate());
+  const creado0 = new Date(creado.getFullYear(), creado.getMonth(), creado.getDate());
+  return String(Math.max(0, diffDays(plazo0, creado0)));
+}
+
 function Pill({
   text,
   tone,
@@ -981,8 +1002,14 @@ export default function ObservacionesPage() {
                           </span>
                         </div>
                         <div style={{ fontSize: 12, color: "#2563eb", fontWeight: 900 }}>
-                          FECHA ESTIMADA:{" "}
-                          <span style={{ color: "#0f172a" }}>{o.plazo}</span>
+                          PLAZO ESTIMADO:{" "}
+                          <span style={{ color: "#0f172a" }}>
+                            {getPlazoEstimadoDias(o.creado_en, o.plazo)} dias
+                          </span>
+                        </div>
+                        <div style={{ fontSize: 12, color: "#2563eb", fontWeight: 900 }}>
+                          FECHA CREACION:{" "}
+                          <span style={{ color: "#0f172a" }}>{formatDateDMY(o.creado_en)}</span>
                         </div>
                       </div>
 
