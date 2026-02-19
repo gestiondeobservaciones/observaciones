@@ -133,6 +133,7 @@ function PublicoPageContent() {
   const [zoomUrl, setZoomUrl] = useState<string | null>(null);
   const [zoomLabel, setZoomLabel] = useState<string>("");
   const [zoomTouchStartY, setZoomTouchStartY] = useState<number | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   const [loginOpen, setLoginOpen] = useState(false);
   const [loginDni, setLoginDni] = useState("");
@@ -163,6 +164,14 @@ function PublicoPageContent() {
 
   useEffect(() => {
     load();
+  }, []);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 768px)");
+    const syncViewport = () => setIsMobile(media.matches);
+    syncViewport();
+    media.addEventListener("change", syncViewport);
+    return () => media.removeEventListener("change", syncViewport);
   }, []);
 
   useEffect(() => {
@@ -249,7 +258,7 @@ function PublicoPageContent() {
       style={{
         background: pageBg,
         minHeight: "100vh",
-        padding: 16,
+        padding: isMobile ? 10 : 16,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
@@ -281,7 +290,7 @@ function PublicoPageContent() {
             left: "50%",
             top: "50%",
             transform: "translate(-50%, -50%)",
-            width: "60%",
+            width: isMobile ? "58%" : "60%",
             height: "auto",
             objectFit: "contain",
             pointerEvents: "none",
@@ -294,7 +303,7 @@ function PublicoPageContent() {
             position: "absolute",
             right: 12,
             top: 12,
-            width: "min(140px, 30vw)",
+            width: isMobile ? "min(92px, 24vw)" : "min(140px, 30vw)",
             height: "auto",
             display: "block",
           }}
@@ -311,16 +320,16 @@ function PublicoPageContent() {
           maxWidth: 1100,
           margin: "0 auto 14px auto",
           display: "flex",
+          flexWrap: isMobile ? "wrap" : "nowrap",
           gap: 10,
-          alignItems: "center",
+          alignItems: isMobile ? "flex-start" : "center",
           position: "relative",
         }}
       >
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div
             style={{
-              display: "inline-flex",
-              alignItems: "center",
+              display: "block",
               padding: "6px 12px",
               borderRadius: 999,
               border: "1px solid rgba(14,165,233,0.35)",
@@ -329,8 +338,10 @@ function PublicoPageContent() {
               boxShadow: "0 8px 20px rgba(14,165,233,0.25)",
               fontFamily: "Sora, Segoe UI, sans-serif",
               fontWeight: 900,
-              fontSize: 20,
+              fontSize: isMobile ? 14 : 20,
               color: "#0f172a",
+              lineHeight: 1.2,
+              maxWidth: "100%",
             }}
           >
             Reporte de condiciones subestandares
@@ -341,7 +352,7 @@ function PublicoPageContent() {
           </div>
         </div>
 
-        <div style={{ flex: 1 }} />
+        <div style={{ flex: 1, display: isMobile ? "none" : "block" }} />
 
         <img
           src="https://satljniaasognjpuncel.supabase.co/storage/v1/object/public/assets/Img/volcan_cerro_loop_12s_fundido.gif"
@@ -351,19 +362,28 @@ function PublicoPageContent() {
             left: "54%",
             top: "50%",
             transform: "translate(-50%, -50%)",
-            width: "min(240px, 42vw)",
+            width: "min(200px, 34vw)",
             height: "auto",
             maxHeight: "72%",
             objectFit: "contain",
             pointerEvents: "none",
+            display: isMobile ? "none" : "block",
           }}
         />
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            flexWrap: "wrap",
+            width: isMobile ? "100%" : "auto",
+          }}
+        >
           <button
             onClick={openLogin}
             style={{
-              padding: "10px 16px",
+              padding: isMobile ? "8px 12px" : "10px 16px",
               borderRadius: 999,
               border: "1px solid rgba(37,99,235,0.45)",
               background:
@@ -385,7 +405,7 @@ function PublicoPageContent() {
           <button
             onClick={load}
             style={{
-              padding: "10px 16px",
+              padding: isMobile ? "8px 12px" : "10px 16px",
               borderRadius: 999,
               border: "1px solid rgba(37,99,235,0.35)",
               background:
@@ -429,24 +449,24 @@ function PublicoPageContent() {
                 const pillTone = s.sem === "verde" ? "green" : s.sem === "amarillo" ? "yellow" : "red";
 
                 return (
+                <div
+                  key={o.id}
+                  style={{
+                    border: `1px solid ${getRiesgoColor(o.categoria)}`,
+                    borderRadius: 16,
+                    padding: isMobile ? 12 : 16,
+                    background: "linear-gradient(180deg, #DCE6F2 0%, #C9D6E6 100%)",
+                    boxShadow: "0 6px 16px rgba(15,23,42,0.08)",
+                  }}
+                >
                   <div
-                    key={o.id}
                     style={{
-                      border: `1px solid ${getRiesgoColor(o.categoria)}`,
-                      borderRadius: 16,
-                      padding: 16,
-                      background: "linear-gradient(180deg, #DCE6F2 0%, #C9D6E6 100%)",
-                      boxShadow: "0 6px 16px rgba(15,23,42,0.08)",
+                      display: "grid",
+                      gridTemplateColumns: isMobile ? "1fr" : "1fr 120px 1fr",
+                      gap: 12,
+                      alignItems: isMobile ? "start" : "center",
                     }}
                   >
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 120px 1fr",
-                        gap: 12,
-                        alignItems: "center",
-                      }}
-                    >
                       <div style={{ display: "grid", gap: 6 }}>
                         <div style={{ fontSize: 12, fontWeight: 900 }}>
                           REPORTANTE: <span style={{ textTransform: "uppercase" }}>{o.responsable}</span>
@@ -468,6 +488,12 @@ function PublicoPageContent() {
                         </div>
                         <div style={{ fontSize: 12, color: "#2563eb", fontWeight: 900 }}>
                           FECHA ESTIMADA: <span style={{ color: "#0f172a" }}>{o.plazo}</span>
+                        </div>
+                        <div style={{ fontSize: 12, color: "#2563eb", fontWeight: 900 }}>
+                          FECHA CREACION:{" "}
+                          <span style={{ color: "#0f172a" }}>
+                            {o.creado_en ? new Date(o.creado_en).toLocaleDateString() : "-"}
+                          </span>
                         </div>
                       </div>
 
@@ -546,7 +572,7 @@ function PublicoPageContent() {
                   style={{
                     border: `1px solid ${getRiesgoColor(o.categoria)}`,
                     borderRadius: 16,
-                    padding: 16,
+                    padding: isMobile ? 12 : 16,
                     background: "linear-gradient(180deg, #DCE6F2 0%, #C9D6E6 100%)",
                     boxShadow: "0 6px 16px rgba(15,23,42,0.08)",
                   }}
@@ -554,12 +580,12 @@ function PublicoPageContent() {
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "320px 240px 1fr",
+                      gridTemplateColumns: isMobile ? "1fr" : "320px 240px 1fr",
                       gap: 16,
                       alignItems: "start",
                     }}
                   >
-                    <div style={{ width: 320, display: "grid", gap: 6 }}>
+                    <div style={{ width: isMobile ? "100%" : 320, display: "grid", gap: 6 }}>
                       <div style={{ fontSize: 12, fontWeight: 900 }}>
                         CERRADO POR: <span style={{ textTransform: "uppercase" }}>{o.cerrado_por || "-"}</span>
                       </div>
@@ -586,9 +612,17 @@ function PublicoPageContent() {
                       </div>
                     </div>
 
-                    <div style={{ width: 240 }}>
+                    <div style={{ width: isMobile ? "100%" : 240 }}>
                       {o.evidencia_url || o.cierre_evidencia_url ? (
-                        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center", gap: 10 }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            justifyContent: isMobile ? "flex-start" : "center",
+                            gap: 10,
+                            flexWrap: isMobile ? "wrap" : "nowrap",
+                          }}
+                        >
                           {o.evidencia_url && (
                             <div style={{ display: "grid", justifyItems: "center", gap: 6 }}>
                               <button
