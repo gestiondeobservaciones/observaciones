@@ -381,6 +381,15 @@ export default function ObservacionesPage() {
     if (closeOpen) closeDescRef.current?.focus();
   }, [closeOpen]);
 
+  useEffect(() => {
+    if (!newOpen && !editOpen && !closeOpen && !zoomOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [newOpen, editOpen, closeOpen, zoomOpen]);
+
   async function logout() {
     await supabase.auth.signOut();
     window.location.href = "/login";
@@ -1448,19 +1457,14 @@ export default function ObservacionesPage() {
             position: "fixed",
             inset: 0,
             background: "rgba(2,6,23,0.65)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 8,
             zIndex: 70,
           }}
           className={styles.modalOverlay}
         >
-          <div onClick={(e) => e.stopPropagation()} style={{ width: "min(860px, 96vw)" }} className={styles.modalPanel}>
+          <div onClick={(e) => e.stopPropagation()} className={`${styles.modalPanel} ${styles.modalPanelWide}`}>
             <div className={`${styles.card} ${styles.modalCardTight}`} role="dialog" aria-modal="true">
               <div className={styles.modalHeader}>
                 <div className={styles.modalTitle}>Nueva observación</div>
-                <div style={{ flex: 1 }} />
                 <button
                   type="button"
                   onClick={() => setNewOpen(false)}
@@ -1610,19 +1614,14 @@ export default function ObservacionesPage() {
             position: "fixed",
             inset: 0,
             background: "rgba(2,6,23,0.65)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 8,
             zIndex: 70,
           }}
           className={styles.modalOverlay}
         >
-          <div onClick={(e) => e.stopPropagation()} style={{ width: "min(860px, 96vw)" }} className={styles.modalPanel}>
+          <div onClick={(e) => e.stopPropagation()} className={`${styles.modalPanel} ${styles.modalPanelWide}`}>
             <div className={`${styles.card} ${styles.modalCardTight}`} role="dialog" aria-modal="true">
               <div className={styles.modalHeader}>
                 <div className={styles.modalTitle}>Editar observación</div>
-                <div style={{ flex: 1 }} />
                 <button
                   type="button"
                   onClick={() => setEditOpen(false)}
@@ -1794,21 +1793,16 @@ export default function ObservacionesPage() {
             position: "fixed",
             inset: 0,
             background: "rgba(2,6,23,0.65)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 8,
             zIndex: 70,
           }}
           className={styles.modalOverlay}
         >
-          <div onClick={(e) => e.stopPropagation()} style={{ width: "min(760px, 96vw)" }} className={styles.modalPanel}>
+          <div onClick={(e) => e.stopPropagation()} className={`${styles.modalPanel} ${styles.modalPanelNarrow}`}>
             <div className={`${styles.card} ${styles.modalCardTight}`} role="dialog" aria-modal="true">
               <div className={styles.modalHeader}>
                 <div className={styles.modalTitle}>
                   Cerrar observación (evidencia obligatoria)
                 </div>
-                <div style={{ flex: 1 }} />
                 <button
                   type="button"
                   onClick={() => setCloseOpen(false)}
