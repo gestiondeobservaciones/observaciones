@@ -1458,21 +1458,13 @@ export default function ObservacionesPage() {
         >
           <div onClick={(e) => e.stopPropagation()} style={{ width: "min(860px, 96vw)" }} className={styles.modalPanel}>
             <div className={`${styles.card} ${styles.modalCardTight}`} role="dialog" aria-modal="true">
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                <div style={{ fontWeight: 900, color: "#e2e8f0", fontSize: 18 }}>Nueva observación</div>
+              <div className={styles.modalHeader}>
+                <div className={styles.modalTitle}>Nueva observación</div>
                 <div style={{ flex: 1 }} />
                 <button
                   type="button"
                   onClick={() => setNewOpen(false)}
-                  style={{
-                    padding: "8px 10px",
-                    borderRadius: 10,
-                    border: "1px solid rgba(148,163,184,0.45)",
-                    background: "rgba(15,23,42,0.8)",
-                    color: "#e2e8f0",
-                    fontWeight: 800,
-                    cursor: "pointer",
-                  }}
+                  className={styles.modalClose}
                 >
                   Cerrar
                 </button>
@@ -1628,21 +1620,13 @@ export default function ObservacionesPage() {
         >
           <div onClick={(e) => e.stopPropagation()} style={{ width: "min(860px, 96vw)" }} className={styles.modalPanel}>
             <div className={`${styles.card} ${styles.modalCardTight}`} role="dialog" aria-modal="true">
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                <div style={{ fontWeight: 900, color: "#e2e8f0", fontSize: 18 }}>Editar observación</div>
+              <div className={styles.modalHeader}>
+                <div className={styles.modalTitle}>Editar observación</div>
                 <div style={{ flex: 1 }} />
                 <button
                   type="button"
                   onClick={() => setEditOpen(false)}
-                  style={{
-                    padding: "8px 10px",
-                    borderRadius: 10,
-                    border: "1px solid rgba(148,163,184,0.45)",
-                    background: "rgba(15,23,42,0.8)",
-                    color: "#e2e8f0",
-                    fontWeight: 800,
-                    cursor: "pointer",
-                  }}
+                  className={styles.modalClose}
                 >
                   Cerrar
                 </button>
@@ -1726,45 +1710,29 @@ export default function ObservacionesPage() {
                   />
                 </label>
 
-                <div
-                  className={`${styles.evidenceBlock} ${editInvalid.evidencia ? styles.inputErrorBlock : ""}`}
-                  style={{
-                    position: "relative",
-                    paddingRight: editCurrentUrl ? 110 : undefined,
-                    minHeight: editCurrentUrl ? 96 : undefined,
-                  }}
-                >
+                <div className={`${styles.evidenceBlock} ${editInvalid.evidencia ? styles.inputErrorBlock : ""}`}>
                   <div className={styles.evidenceTitle}>Evidencia 📷</div>
                   {editCurrentUrl && (
-                    <button
-                      type="button"
-                      onClick={() => openZoom(editCurrentUrl || "", "Evidencia")}
-                      style={{
-                        position: "absolute",
-                        right: 10,
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        border: "2px solid rgba(148,163,184,0.7)",
-                        borderRadius: 10,
-                        padding: 4,
-                        background: "rgba(15,23,42,0.45)",
-                        cursor: "zoom-in",
-                        display: "inline-flex",
-                      }}
-                      title="Ver evidencia"
-                    >
-                      <ThumbImage
-                        src={editCurrentUrl}
-                        alt="Evidencia actual"
-                        thumbWidth={72}
-                        style={{
-                          width: 72,
-                          height: 72,
-                          objectFit: "contain",
-                          borderRadius: 8,
-                        }}
-                      />
-                    </button>
+                    <div className={styles.evidencePreviewRow}>
+                      <button
+                        type="button"
+                        onClick={() => openZoom(editCurrentUrl || "", "Evidencia")}
+                        className={styles.evidencePreviewBtn}
+                        title="Ver evidencia"
+                      >
+                        <ThumbImage
+                          src={editCurrentUrl}
+                          alt="Evidencia actual"
+                          thumbWidth={72}
+                          style={{
+                            width: 72,
+                            height: 72,
+                            objectFit: "contain",
+                            borderRadius: 8,
+                          }}
+                        />
+                      </button>
+                    </div>
                   )}
                   <div className={styles.fileRow}>
                     <input
@@ -1836,23 +1804,15 @@ export default function ObservacionesPage() {
         >
           <div onClick={(e) => e.stopPropagation()} style={{ width: "min(760px, 96vw)" }} className={styles.modalPanel}>
             <div className={`${styles.card} ${styles.modalCardTight}`} role="dialog" aria-modal="true">
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                <div style={{ fontWeight: 900, color: "#e2e8f0", fontSize: 18 }}>
+              <div className={styles.modalHeader}>
+                <div className={styles.modalTitle}>
                   Cerrar observación (evidencia obligatoria)
                 </div>
                 <div style={{ flex: 1 }} />
                 <button
                   type="button"
                   onClick={() => setCloseOpen(false)}
-                  style={{
-                    padding: "8px 10px",
-                    borderRadius: 10,
-                    border: "1px solid rgba(148,163,184,0.45)",
-                    background: "rgba(15,23,42,0.8)",
-                    color: "#e2e8f0",
-                    fontWeight: 800,
-                    cursor: "pointer",
-                  }}
+                  className={styles.modalClose}
                 >
                   Cerrar
                 </button>
@@ -1885,13 +1845,13 @@ export default function ObservacionesPage() {
                 >
                   <div className={styles.evidenceTitle}>Evidencia 📷 *</div>
                   <div className={styles.fileRow}>
-                  <input
-                    id="evidencia-file-close"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setCloseFile(e.target.files?.[0] ?? null)}
-                    className={styles.fileInput}
-                  />
+                    <input
+                      id="evidencia-file-close"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setCloseFile(e.target.files?.[0] ?? null)}
+                      className={styles.fileInput}
+                    />
                     <label htmlFor="evidencia-file-close" className={styles.fileButton}>
                       Seleccionar archivo
                     </label>
@@ -1899,7 +1859,7 @@ export default function ObservacionesPage() {
                       {closeFile ? closeFile.name : "Ningún archivo seleccionado"}
                     </span>
                   </div>
-              </div>
+                </div>
 
                 <div className={styles.modalActions}>
                   <button
@@ -1931,6 +1891,7 @@ export default function ObservacionesPage() {
     </div>
   );
 }
+
 
 
 

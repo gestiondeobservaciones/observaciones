@@ -235,15 +235,60 @@
 
 .modalOverlay {
   animation: modalFade 0.18s ease;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .modalPanel {
   animation: modalPop 0.2s ease;
+  max-height: calc(100dvh - 16px);
 }
 
 .modalCardTight {
   padding: 14px;
   border-radius: 16px;
+  width: 100%;
+  max-height: calc(100dvh - 16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.modalTitle {
+  font-weight: 900;
+  color: #e2e8f0;
+  font-size: 18px;
+}
+
+.modalClose {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(15, 23, 42, 0.8);
+  color: #e2e8f0;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.evidencePreviewRow {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.evidencePreviewBtn {
+  border: 2px solid rgba(148, 163, 184, 0.7);
+  border-radius: 10px;
+  padding: 4px;
+  background: rgba(15, 23, 42, 0.45);
+  cursor: zoom-in;
+  display: inline-flex;
 }
 
 .modalCardTight .label {
@@ -299,6 +344,11 @@
   justify-content: flex-end;
   gap: 10px;
   flex-wrap: wrap;
+  position: sticky;
+  bottom: 0;
+  padding-top: 8px;
+  margin-top: 2px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0) 0%, rgba(15, 23, 42, 0.85) 45%);
 }
 
 @keyframes modalFade {
@@ -340,6 +390,19 @@
   .modalCardTight {
     padding: 10px;
     border-radius: 14px;
+    max-height: calc(100dvh - 8px);
+  }
+
+  .modalHeader {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    padding-bottom: 8px;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.65) 100%);
+  }
+
+  .modalTitle {
+    font-size: 16px;
   }
 
   .modalCardTight .input {
