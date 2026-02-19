@@ -532,6 +532,10 @@ function PublicoPageContent() {
                               borderRadius: 14,
                               padding: 3,
                               cursor: "zoom-in",
+                              width: 116,
+                              height: 116,
+                              display: "grid",
+                              placeItems: "center",
                             }}
                           >
                             <ThumbImage
@@ -551,7 +555,7 @@ function PublicoPageContent() {
                         )}
                       </div>
 
-                      <div style={{ display: "grid", gap: 8 }}>
+                      <div style={{ display: "grid", gap: 8, alignSelf: "start" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           <div style={{ fontWeight: 900, fontSize: 13, color: "#111827" }}>Observaci&oacute;n:</div>
                           <div style={{ marginLeft: "auto" }}>
