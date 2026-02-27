@@ -234,6 +234,7 @@ export default function ObservacionesPage() {
 
   // delete (admin)
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
 
   const pendientes = useMemo(() => data.filter((d) => d.estado === "pendiente"), [data]);
   const cerradas = useMemo(() => data.filter((d) => d.estado === "cerrada"), [data]);
@@ -355,6 +356,13 @@ export default function ObservacionesPage() {
       await loadPerfil();
       await load();
     })();
+  }, []);
+
+  useEffect(() => {
+    const onResize = () => setIsMobileViewport(window.innerWidth <= 860);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   useEffect(() => {
@@ -774,13 +782,14 @@ export default function ObservacionesPage() {
     return (
       <div
         style={{
-          padding: 20,
+          padding: isMobileViewport ? 10 : 20,
           background: pageBg,
           minHeight: "100vh",
           backgroundSize: "cover",
           backgroundPosition: "center top",
           backgroundRepeat: "no-repeat",
-          backgroundAttachment: "fixed",
+          backgroundAttachment: isMobileViewport ? "scroll" : "fixed",
+          overflowX: "hidden",
         }}
       >
         <div
@@ -790,6 +799,7 @@ export default function ObservacionesPage() {
             borderRadius: 14,
             padding: 16,
             maxWidth: 1100,
+            width: "100%",
             margin: "0 auto",
           }}
         >
@@ -804,11 +814,12 @@ export default function ObservacionesPage() {
       style={{
         background: pageBg,
         minHeight: "100vh",
-        padding: 16,
+        padding: isMobileViewport ? 8 : 16,
         backgroundSize: "cover",
         backgroundPosition: "center top",
         backgroundRepeat: "no-repeat",
-        backgroundAttachment: "fixed",
+        backgroundAttachment: isMobileViewport ? "scroll" : "fixed",
+        overflowX: "hidden",
       }}
     >
       {/* Header */}
@@ -817,18 +828,20 @@ export default function ObservacionesPage() {
           background: "white",
           border: "1px solid #e5e7eb",
           borderRadius: 14,
-          padding: 14,
+          padding: isMobileViewport ? 10 : 14,
           maxWidth: 1100,
+          width: "100%",
           margin: "0 auto 14px auto",
           display: "flex",
-          gap: 10,
-          alignItems: "center",
+          flexDirection: isMobileViewport ? "column" : "row",
+          gap: isMobileViewport ? 12 : 10,
+          alignItems: isMobileViewport ? "stretch" : "center",
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
           <div
             style={{
-              fontSize: 22,
+              fontSize: isMobileViewport ? 18 : 22,
               fontWeight: 900,
               letterSpacing: 0.6,
               color: "#0b1220",
@@ -850,9 +863,10 @@ export default function ObservacionesPage() {
               boxShadow: "0 8px 20px rgba(14,165,233,0.25)",
               fontFamily: "Sora, Segoe UI, sans-serif",
               fontWeight: 900,
-              fontSize: 20,
+              fontSize: isMobileViewport ? 16 : 20,
               color: "#0f172a",
               marginTop: 4,
+              maxWidth: "100%",
             }}
           >
             👷‍♂️ Bienvenido{perfil?.nombre ? `, ${perfil.nombre}` : ""} 👋
@@ -873,79 +887,95 @@ export default function ObservacionesPage() {
           )}
         </div>
 
-        <div style={{ flex: 1 }} />
+        {!isMobileViewport && <div style={{ flex: 1 }} />}
 
-        <button
-          onClick={openNuevaModal}
+        <div
           style={{
-            background: "#0ea5e9",
-            color: "white",
-            padding: "10px 14px",
-            borderRadius: 10,
-            border: "1px solid rgba(0,0,0,0.12)",
-            fontWeight: 800,
-            display: "inline-flex",
-            gap: 8,
-            alignItems: "center",
-            cursor: "pointer",
+            display: "flex",
+            gap: 10,
+            flexWrap: "wrap",
+            width: isMobileViewport ? "100%" : "auto",
+            justifyContent: isMobileViewport ? "flex-start" : "flex-end",
           }}
         >
-          ➕ Nueva observación
-        </button>
+          <button
+            onClick={openNuevaModal}
+            style={{
+              background: "#0ea5e9",
+              color: "white",
+              padding: "10px 14px",
+              borderRadius: 10,
+              border: "1px solid rgba(0,0,0,0.12)",
+              fontWeight: 800,
+              display: "inline-flex",
+              gap: 8,
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              flex: isMobileViewport ? "1 1 160px" : undefined,
+            }}
+          >
+            Nueva observacion
+          </button>
 
-        <button
-          onClick={async () => {
-            await loadPerfil();
-            await load();
-          }}
-          style={{
-            padding: "10px 14px",
-            borderRadius: 10,
-            border: "1px solid #d1d5db",
-            background: "white",
-            fontWeight: 800,
-            cursor: "pointer",
-          }}
-        >
-          🔄 Recargar
-        </button>
+          <button
+            onClick={async () => {
+              await loadPerfil();
+              await load();
+            }}
+            style={{
+              padding: "10px 14px",
+              borderRadius: 10,
+              border: "1px solid #d1d5db",
+              background: "white",
+              fontWeight: 800,
+              cursor: "pointer",
+              flex: isMobileViewport ? "1 1 120px" : undefined,
+            }}
+          >
+            Recargar
+          </button>
 
-        <button
-          onClick={logout}
-          style={{
-            padding: "10px 14px",
-            borderRadius: 10,
-            border: "1px solid #111827",
-            background: "#111827",
-            color: "white",
-            fontWeight: 900,
-            cursor: "pointer",
-          }}
-        >
-          Salir
-        </button>
+          <button
+            onClick={logout}
+            style={{
+              padding: "10px 14px",
+              borderRadius: 10,
+              border: "1px solid #111827",
+              background: "#111827",
+              color: "white",
+              fontWeight: 900,
+              cursor: "pointer",
+              flex: isMobileViewport ? "1 1 100px" : undefined,
+            }}
+          >
+            Salir
+          </button>
 
-        <a
-          href="/dashboard"
-          style={{
-            padding: "10px 14px",
-            borderRadius: 10,
-            border: "1px solid #0ea5e9",
-            background: "#0ea5e9",
-            color: "white",
-            fontWeight: 900,
-            textDecoration: "none",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
-          📊 Dashboard
-        </a>
+          <a
+            href="/dashboard"
+            style={{
+              padding: "10px 14px",
+              borderRadius: 10,
+              border: "1px solid #0ea5e9",
+              background: "#0ea5e9",
+              color: "white",
+              fontWeight: 900,
+              textDecoration: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              flex: isMobileViewport ? "1 1 120px" : undefined,
+            }}
+          >
+            Dashboard
+          </a>
+        </div>
       </div>
 
       {/* Listado */}
-      <div style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gap: 14 }}>
+      <div style={{ maxWidth: 1100, width: "100%", margin: "0 auto", display: "grid", gap: 14 }}>
         {/* Pendientes */}
         <div
           style={{
@@ -985,9 +1015,9 @@ export default function ObservacionesPage() {
                     <div
                       style={{
                         display: "grid",
-                        gridTemplateColumns: "1fr 120px 1fr",
-                        gap: 12,
-                        alignItems: "center",
+                        gridTemplateColumns: isMobileViewport ? "1fr" : "1fr 120px 1fr",
+                        gap: isMobileViewport ? 10 : 12,
+                        alignItems: isMobileViewport ? "start" : "center",
                       }}
                     >
                       <div style={{ display: "grid", gap: 6 }}>
@@ -1035,8 +1065,8 @@ export default function ObservacionesPage() {
                               borderRadius: 14,
                               padding: 3,
                               cursor: "zoom-in",
-                              width: 116,
-                              height: 116,
+                              width: isMobileViewport ? 96 : 116,
+                              height: isMobileViewport ? 96 : 116,
                               display: "grid",
                               placeItems: "center",
                             }}
@@ -1044,10 +1074,10 @@ export default function ObservacionesPage() {
                             <ThumbImage
                               src={o.evidencia_url}
                               alt="Evidencia"
-                              thumbWidth={110}
+                              thumbWidth={isMobileViewport ? 90 : 110}
                               style={{
-                                width: 110,
-                                height: 110,
+                                width: isMobileViewport ? 90 : 110,
+                                height: isMobileViewport ? 90 : 110,
                                 objectFit: "contain",
                                 borderRadius: 8,
                               }}
@@ -1059,9 +1089,16 @@ export default function ObservacionesPage() {
                       </div>
 
                       <div style={{ display: "grid", gap: 8 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <div style={{ fontWeight: 900, fontSize: 13, color: "#111827" }}>Observación:</div>
-                          <div style={{ marginLeft: "auto" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: isMobileViewport ? "flex-start" : "center",
+                            flexDirection: isMobileViewport ? "column" : "row",
+                            gap: 8,
+                          }}
+                        >
+                          <div style={{ fontWeight: 900, fontSize: 13, color: "#111827" }}>Observacion:</div>
+                          <div style={{ marginLeft: isMobileViewport ? 0 : "auto" }}>
                             <Pill text={s.label} tone={pillTone} />
                           </div>
                         </div>
@@ -1176,12 +1213,12 @@ export default function ObservacionesPage() {
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "320px 240px 1fr",
-                      gap: 16,
+                      gridTemplateColumns: isMobileViewport ? "1fr" : "320px 240px 1fr",
+                      gap: isMobileViewport ? 10 : 16,
                       alignItems: "start",
                     }}
                   >
-                    <div style={{ width: 320, display: "grid", gap: 6 }}>
+                    <div style={{ width: isMobileViewport ? "100%" : 320, display: "grid", gap: 6 }}>
                       <div style={{ fontSize: 12, fontWeight: 900 }}>
                         CERRADO POR:{" "}
                         <span style={{ textTransform: "uppercase" }}>
@@ -1212,17 +1249,25 @@ export default function ObservacionesPage() {
                       </div>
                     </div>
 
-                    <div style={{ width: 240 }}>
+                    <div style={{ width: isMobileViewport ? "100%" : 240 }}>
                       {o.evidencia_url || o.cierre_evidencia_url ? (
-                        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center", gap: 10 }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            justifyContent: "center",
+                            gap: 10,
+                            flexWrap: isMobileViewport ? "wrap" : "nowrap",
+                          }}
+                        >
                           {o.evidencia_url && (
                             <div style={{ display: "grid", justifyItems: "center", gap: 6 }}>
                               <button
                                 type="button"
                                 onClick={() => openZoom(o.evidencia_url || "", "Antes")}
                                 style={{
-                                  width: 120,
-                                  height: 120,
+                                  width: isMobileViewport ? 104 : 120,
+                                  height: isMobileViewport ? 104 : 120,
                                   borderRadius: 14,
                                   border: "1px solid rgba(14,165,233,0.45)",
                                   background:
@@ -1238,10 +1283,10 @@ export default function ObservacionesPage() {
                                 <ThumbImage
                                   src={o.evidencia_url}
                                   alt="Antes"
-                                  thumbWidth={108}
+                                  thumbWidth={isMobileViewport ? 92 : 108}
                                   style={{
-                                    width: 108,
-                                    height: 108,
+                                    width: isMobileViewport ? 92 : 108,
+                                    height: isMobileViewport ? 92 : 108,
                                     borderRadius: 10,
                                     objectFit: "contain",
                                     display: "block",
@@ -1258,8 +1303,8 @@ export default function ObservacionesPage() {
                                 type="button"
                                 onClick={() => openZoom(o.cierre_evidencia_url || "", "Después")}
                                 style={{
-                                  width: 120,
-                                  height: 120,
+                                  width: isMobileViewport ? 104 : 120,
+                                  height: isMobileViewport ? 104 : 120,
                                   borderRadius: 14,
                                   border: "1px solid rgba(14,165,233,0.45)",
                                   background:
@@ -1275,10 +1320,10 @@ export default function ObservacionesPage() {
                                 <ThumbImage
                                   src={o.cierre_evidencia_url}
                                   alt="Después"
-                                  thumbWidth={108}
+                                  thumbWidth={isMobileViewport ? 92 : 108}
                                   style={{
-                                    width: 108,
-                                    height: 108,
+                                    width: isMobileViewport ? 92 : 108,
+                                    height: isMobileViewport ? 92 : 108,
                                     borderRadius: 10,
                                     objectFit: "contain",
                                     display: "block",
