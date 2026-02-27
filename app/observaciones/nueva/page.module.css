@@ -328,7 +328,8 @@
 .modalCardTight .input {
   padding: 10px 12px;
   border-radius: 12px;
-  font-size: 14px;
+  font-size: 16px;
+  line-height: 1.35;
 }
 
 .modalCardTight .textarea {
@@ -446,8 +447,8 @@
   }
 
   .modalCardTight .input {
-    padding: 9px 11px;
-    font-size: 13px;
+    padding: 10px 12px;
+    font-size: 16px;
   }
 
   .modalCardTight .textarea {
@@ -469,5 +470,14 @@
 
   .modalActions button {
     width: 100%;
+  }
+}
+
+/* Evita el zoom automático al enfocar campos en móviles */
+@media (hover: none) and (pointer: coarse) {
+  .modalCardTight input,
+  .modalCardTight select,
+  .modalCardTight textarea {
+    font-size: 16px;
   }
 }
