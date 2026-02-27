@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabaseBrowser as supabase } from "@/lib/supabase-browser";
 import { AREAS, CATEGORIAS } from "@/lib/constants";
 import ThumbImage from "@/components/ThumbImage";
+import { compressImageForUpload, extractStoragePaths } from "@/lib/evidencia-utils";
 import styles from "./nueva/page.module.css";
 
 type Perfil = {
@@ -488,12 +489,14 @@ export default function ObservacionesPage() {
 
     if (userErr || !user) throw new Error("Sesión inválida. Vuelve a iniciar sesión.");
 
-    const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+    const optimizedFile = await compressImageForUpload(file);
+    const safeName = optimizedFile.name.replace(/[^\w.\-]+/g, "_");
     const path = `${user.id}/${Date.now()}_${safeName}`;
 
-    const up = await supabase.storage.from("evidencias").upload(path, file, {
+    const up = await supabase.storage.from("evidencias").upload(path, optimizedFile, {
       cacheControl: "3600",
       upsert: false,
+      contentType: optimizedFile.type || file.type || "image/jpeg",
     });
 
     if (up.error) throw new Error("Error subiendo evidencia: " + up.error.message);
@@ -503,6 +506,14 @@ export default function ObservacionesPage() {
 
     if (!publicUrl) throw new Error("No se pudo obtener URL pública del archivo.");
     return publicUrl;
+  }
+
+  async function removeEvidenciasFromStorage(urls: Array<string | null | undefined>) {
+    const paths = extractStoragePaths(urls, "evidencias");
+    if (!paths.length) return;
+
+    const { error } = await supabase.storage.from("evidencias").remove(paths);
+    if (error) throw new Error("No se pudieron borrar archivos en Storage: " + error.message);
   }
 
   async function subirArchivoNuevo() {
@@ -639,6 +650,7 @@ export default function ObservacionesPage() {
 
     setSavingEdit(true);
     try {
+      const oldUrl = editCurrentUrl;
       const newUrl = await subirArchivoEditar();
       const evidenciaFinal = newUrl ?? editCurrentUrl ?? null;
 
@@ -678,6 +690,14 @@ export default function ObservacionesPage() {
           creado_en: editTarget.creado_en,
         },
       });
+
+      if (newUrl && oldUrl && newUrl !== oldUrl) {
+        try {
+          await removeEvidenciasFromStorage([oldUrl]);
+        } catch (cleanupErr) {
+          console.warn("No se pudo borrar evidencia anterior:", cleanupErr);
+        }
+      }
 
       setEditOpen(false);
       setEditTarget(null);
@@ -788,8 +808,20 @@ export default function ObservacionesPage() {
       const { error } = await supabase.from("observaciones").delete().eq("id", obs.id);
       if (error) throw new Error(error.message);
 
+      let storageCleanupWarning = "";
+      try {
+        await removeEvidenciasFromStorage([obs.evidencia_url, obs.cierre_evidencia_url]);
+      } catch (cleanupErr: any) {
+        storageCleanupWarning = cleanupErr?.message || "No se pudieron borrar archivos en Storage.";
+        console.warn("No se pudo limpiar Storage al eliminar cerrada:", cleanupErr);
+      }
+
       await load();
-      alert("🗑️ Eliminada.");
+      if (storageCleanupWarning) {
+        alert("El registro se elimino, pero hubo problema limpiando Storage: " + storageCleanupWarning);
+      } else {
+        alert("Eliminada.");
+      }
     } catch (e: any) {
       alert("Error eliminando: " + (e?.message || String(e)));
     } finally {

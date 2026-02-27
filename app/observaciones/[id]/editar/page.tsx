@@ -6,6 +6,7 @@ import ThumbImage from "@/components/ThumbImage";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { AREAS, CATEGORIAS } from "@/lib/constants";
+import { compressImageForUpload, extractStoragePaths } from "@/lib/evidencia-utils";
 import styles from "../../nueva/page.module.css";
 
 type Perfil = {
@@ -148,16 +149,17 @@ export default function EditarObservacionPage() {
       if (!session) throw new Error("Sesión no encontrada");
 
       const uid = session.user.id;
-      const ext = file.name.split(".").pop() || "jpg";
+      const optimizedFile = await compressImageForUpload(file);
+      const ext = optimizedFile.name.split(".").pop() || "jpg";
       const safeExt = ext.toLowerCase();
       const fileName = `${uid}/${Date.now()}.${safeExt}`;
 
       const { error: upErr } = await supabase.storage
         .from("evidencias")
-        .upload(fileName, file, {
+        .upload(fileName, optimizedFile, {
           cacheControl: "3600",
           upsert: false,
-          contentType: file.type || "image/jpeg",
+          contentType: optimizedFile.type || file.type || "image/jpeg",
         });
 
       if (upErr) throw upErr;
@@ -169,6 +171,14 @@ export default function EditarObservacionPage() {
     } finally {
       setUploading(false);
     }
+  }
+
+  async function removeEvidenciasFromStorage(urls: Array<string | null | undefined>) {
+    const paths = extractStoragePaths(urls, "evidencias");
+    if (!paths.length) return;
+
+    const { error } = await supabase.storage.from("evidencias").remove(paths);
+    if (error) throw new Error("No se pudieron borrar archivos en Storage: " + error.message);
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -194,6 +204,7 @@ export default function EditarObservacionPage() {
 
     setSaving(true);
     try {
+      const oldUrl = currentUrl;
       const newUrl = await subirArchivoSiExiste();
       const evidenciaFinal = newUrl ?? currentUrl ?? null;
 
@@ -216,6 +227,14 @@ export default function EditarObservacionPage() {
       if (!updated) {
         alert("No autorizado: solo el creador o admin puede editar la observación.");
         return;
+      }
+
+      if (newUrl && oldUrl && newUrl !== oldUrl) {
+        try {
+          await removeEvidenciasFromStorage([oldUrl]);
+        } catch (cleanupErr) {
+          console.warn("No se pudo borrar evidencia anterior:", cleanupErr);
+        }
       }
 
       router.push("/observaciones");
