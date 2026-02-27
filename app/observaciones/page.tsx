@@ -398,6 +398,29 @@ export default function ObservacionesPage() {
     };
   }, [newOpen, editOpen, closeOpen, zoomOpen]);
 
+  useEffect(() => {
+    if (!newOpen && !editOpen && !closeOpen) return;
+    const root = document.documentElement;
+    const vv = window.visualViewport;
+
+    const setModalVh = () => {
+      const h = vv?.height ?? window.innerHeight;
+      root.style.setProperty("--modal-vh", `${Math.round(h)}px`);
+    };
+
+    setModalVh();
+    vv?.addEventListener("resize", setModalVh);
+    vv?.addEventListener("scroll", setModalVh);
+    window.addEventListener("resize", setModalVh);
+
+    return () => {
+      vv?.removeEventListener("resize", setModalVh);
+      vv?.removeEventListener("scroll", setModalVh);
+      window.removeEventListener("resize", setModalVh);
+      root.style.removeProperty("--modal-vh");
+    };
+  }, [newOpen, editOpen, closeOpen]);
+
   async function logout() {
     await supabase.auth.signOut();
     window.location.href = "/login";
