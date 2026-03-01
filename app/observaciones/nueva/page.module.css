@@ -409,10 +409,17 @@
     border-radius: 16px;
   }
 
+  .modalOverlay {
+    align-items: flex-start;
+    justify-content: center;
+    padding: 8px;
+  }
+
   .modalCardTight {
     padding: 10px;
     border-radius: 14px;
-    max-height: calc(var(--modal-vh, 100dvh) - 8px);
+    max-height: calc(var(--modal-vh, 100dvh) - 16px);
+    margin-top: max(2px, env(safe-area-inset-top));
   }
 
   .modalHeader {
@@ -458,6 +465,12 @@
 
 /* Prevent input zoom on touch devices */
 @media (hover: none) and (pointer: coarse) {
+  .modalOverlay {
+    align-items: flex-start;
+    justify-content: center;
+    padding: 8px;
+  }
+
   .modalCardTight input,
   .modalCardTight select,
   .modalCardTight textarea {
