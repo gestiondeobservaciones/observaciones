@@ -360,10 +360,25 @@ export default function ObservacionesPage() {
   }, []);
 
   useEffect(() => {
-    const onResize = () => setIsMobileViewport(window.innerWidth <= 860);
-    onResize();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    const detectMobileViewport = () => {
+      const iw = window.innerWidth || Number.POSITIVE_INFINITY;
+      const sw = window.screen?.width || Number.POSITIVE_INFINITY;
+      const vw = window.visualViewport?.width || Number.POSITIVE_INFINITY;
+      const minWidth = Math.min(iw, sw, vw);
+      const uaMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+      setIsMobileViewport(uaMobile || minWidth <= 980);
+    };
+
+    detectMobileViewport();
+    window.addEventListener("resize", detectMobileViewport);
+    window.addEventListener("orientationchange", detectMobileViewport);
+    window.visualViewport?.addEventListener("resize", detectMobileViewport);
+
+    return () => {
+      window.removeEventListener("resize", detectMobileViewport);
+      window.removeEventListener("orientationchange", detectMobileViewport);
+      window.visualViewport?.removeEventListener("resize", detectMobileViewport);
+    };
   }, []);
 
   useEffect(() => {
