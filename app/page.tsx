@@ -188,7 +188,7 @@ function PublicoPageContent() {
   }, []);
 
   useEffect(() => {
-    const media = window.matchMedia("(max-width: 768px)");
+    const media = window.matchMedia("(max-width: 980px), (hover: none) and (pointer: coarse)");
     const syncViewport = () => setIsMobile(media.matches);
     syncViewport();
     media.addEventListener("change", syncViewport);
@@ -284,6 +284,7 @@ function PublicoPageContent() {
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
         backgroundAttachment: "fixed",
+        zoom: isMobile ? 0.92 : 1,
       }}
     >
       <div
