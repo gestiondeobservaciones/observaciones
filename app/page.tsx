@@ -188,11 +188,25 @@ function PublicoPageContent() {
   }, []);
 
   useEffect(() => {
-    const media = window.matchMedia("(max-width: 768px)");
-    const syncViewport = () => setIsMobile(media.matches);
-    syncViewport();
-    media.addEventListener("change", syncViewport);
-    return () => media.removeEventListener("change", syncViewport);
+    const detectMobile = () => {
+      const iw = window.innerWidth || Number.POSITIVE_INFINITY;
+      const sw = window.screen?.width || Number.POSITIVE_INFINITY;
+      const vw = window.visualViewport?.width || Number.POSITIVE_INFINITY;
+      const minWidth = Math.min(iw, sw, vw);
+      const uaMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+      setIsMobile(uaMobile || minWidth <= 980);
+    };
+
+    detectMobile();
+    window.addEventListener("resize", detectMobile);
+    window.addEventListener("orientationchange", detectMobile);
+    window.visualViewport?.addEventListener("resize", detectMobile);
+
+    return () => {
+      window.removeEventListener("resize", detectMobile);
+      window.removeEventListener("orientationchange", detectMobile);
+      window.visualViewport?.removeEventListener("resize", detectMobile);
+    };
   }, []);
 
   useEffect(() => {
@@ -283,7 +297,8 @@ function PublicoPageContent() {
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
-        backgroundAttachment: "fixed",
+        backgroundAttachment: isMobile ? "scroll" : "fixed",
+        overflowX: "hidden",
       }}
     >
       <div
@@ -444,7 +459,7 @@ function PublicoPageContent() {
       </div>
 
       {/* Listado */}
-      <div style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gap: 14 }}>
+      <div style={{ maxWidth: 1100, width: "100%", margin: "0 auto", display: "grid", gap: 14 }}>
         {/* Pendientes */}
         <div
           style={{
@@ -475,7 +490,7 @@ function PublicoPageContent() {
                   style={{
                     border: `1px solid ${getRiesgoColor(o.categoria)}`,
                     borderRadius: 16,
-                    padding: 16,
+                    padding: isMobile ? 12 : 16,
                     background: "linear-gradient(180deg, #DCE6F2 0%, #C9D6E6 100%)",
                     boxShadow: "0 6px 16px rgba(15,23,42,0.08)",
                   }}
@@ -483,9 +498,9 @@ function PublicoPageContent() {
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "1fr 120px 1fr",
-                      gap: 12,
-                      alignItems: "center",
+                      gridTemplateColumns: isMobile ? "1fr" : "1fr 120px 1fr",
+                      gap: isMobile ? 10 : 12,
+                      alignItems: isMobile ? "start" : "center",
                     }}
                   >
                       <div style={{ display: "grid", gap: 6 }}>
@@ -532,8 +547,8 @@ function PublicoPageContent() {
                               borderRadius: 14,
                               padding: 3,
                               cursor: "zoom-in",
-                              width: 116,
-                              height: 116,
+                              width: isMobile ? 96 : 116,
+                              height: isMobile ? 96 : 116,
                               display: "grid",
                               placeItems: "center",
                             }}
@@ -541,10 +556,10 @@ function PublicoPageContent() {
                             <ThumbImage
                               src={o.evidencia_url}
                               alt="Evidencia"
-                              thumbWidth={110}
+                              thumbWidth={isMobile ? 90 : 110}
                               style={{
-                                width: 110,
-                                height: 110,
+                                width: isMobile ? 90 : 110,
+                                height: isMobile ? 90 : 110,
                                 objectFit: "contain",
                                 borderRadius: 8,
                               }}
@@ -555,10 +570,17 @@ function PublicoPageContent() {
                         )}
                       </div>
 
-                      <div style={{ display: "grid", gap: 8, alignSelf: "start" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ display: "grid", gap: 8, alignSelf: "start", minWidth: 0 }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: isMobile ? "flex-start" : "center",
+                            flexDirection: isMobile ? "column" : "row",
+                            gap: 8,
+                          }}
+                        >
                           <div style={{ fontWeight: 900, fontSize: 13, color: "#111827" }}>Observaci&oacute;n:</div>
-                          <div style={{ marginLeft: "auto" }}>
+                          <div style={{ marginLeft: isMobile ? 0 : "auto" }}>
                             <Pill text={s.label} tone={pillTone} />
                           </div>
                         </div>
@@ -655,8 +677,8 @@ function PublicoPageContent() {
                                 type="button"
                                 onClick={() => openZoom(o.evidencia_url || "", "Antes")}
                                 style={{
-                                  width: 120,
-                                  height: 120,
+                                  width: isMobile ? 104 : 120,
+                                  height: isMobile ? 104 : 120,
                                   borderRadius: 14,
                                   border: "1px solid rgba(14,165,233,0.45)",
                                   background:
@@ -672,10 +694,10 @@ function PublicoPageContent() {
                                 <ThumbImage
                                   src={o.evidencia_url}
                                   alt="Antes"
-                                  thumbWidth={108}
+                                  thumbWidth={isMobile ? 92 : 108}
                                   style={{
-                                    width: 108,
-                                    height: 108,
+                                    width: isMobile ? 92 : 108,
+                                    height: isMobile ? 92 : 108,
                                     borderRadius: 10,
                                     objectFit: "contain",
                                     display: "block",
@@ -692,8 +714,8 @@ function PublicoPageContent() {
                                 type="button"
                                 onClick={() => openZoom(o.cierre_evidencia_url || "", "Despu&eacute;s")}
                                 style={{
-                                  width: 120,
-                                  height: 120,
+                                  width: isMobile ? 104 : 120,
+                                  height: isMobile ? 104 : 120,
                                   borderRadius: 14,
                                   border: "1px solid rgba(14,165,233,0.45)",
                                   background:
@@ -709,10 +731,10 @@ function PublicoPageContent() {
                                 <ThumbImage
                                   src={o.cierre_evidencia_url}
                                   alt="Despu&eacute;s"
-                                  thumbWidth={108}
+                                  thumbWidth={isMobile ? 92 : 108}
                                   style={{
-                                    width: 108,
-                                    height: 108,
+                                    width: isMobile ? 92 : 108,
+                                    height: isMobile ? 92 : 108,
                                     borderRadius: 10,
                                     objectFit: "contain",
                                     display: "block",
