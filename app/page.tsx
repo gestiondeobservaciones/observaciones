@@ -547,7 +547,16 @@ function PublicoPageContent() {
                         </div>
                       </div>
 
-                      <div style={{ display: "grid", placeItems: "center", alignSelf: "start" }}>
+                      <div
+                        style={{
+                          display: "grid",
+                          placeItems: "center",
+                          alignSelf: "start",
+                          alignContent: "start",
+                          gap: 8,
+                          gridRow: isMobile ? "1 / span 2" : undefined,
+                        }}
+                      >
                         {o.evidencia_url ? (
                           <button
                             type="button"
@@ -581,6 +590,8 @@ function PublicoPageContent() {
                         ) : (
                           <div style={{ fontSize: 12, color: "#6b7280" }}>Sin evidencia</div>
                         )}
+
+                        {isMobile && <Pill text={s.label} tone={pillTone} />}
                       </div>
 
                       <div
@@ -589,14 +600,17 @@ function PublicoPageContent() {
                           gap: 8,
                           alignSelf: "start",
                           minWidth: 0,
-                          gridColumn: isMobile ? "1 / -1" : undefined,
+                          gridColumn: isMobile ? "1" : undefined,
+                          gridRow: isMobile ? "2" : undefined,
                         }}
                       >
                         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                           <div style={{ fontWeight: 900, fontSize: 13, color: "#111827" }}>Observaci&oacute;n:</div>
-                          <div style={{ marginLeft: "auto" }}>
-                            <Pill text={s.label} tone={pillTone} />
-                          </div>
+                          {!isMobile && (
+                            <div style={{ marginLeft: "auto" }}>
+                              <Pill text={s.label} tone={pillTone} />
+                            </div>
+                          )}
                         </div>
                         <div
                           style={{

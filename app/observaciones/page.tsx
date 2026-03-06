@@ -1242,7 +1242,16 @@ export default function ObservacionesPage() {
                         </div>
                       </div>
 
-                      <div style={{ display: "grid", placeItems: "center", alignSelf: "start" }}>
+                      <div
+                        style={{
+                          display: "grid",
+                          placeItems: "center",
+                          alignSelf: "start",
+                          alignContent: "start",
+                          gap: 8,
+                          gridRow: isMobileViewport ? "1 / span 2" : undefined,
+                        }}
+                      >
                         {o.evidencia_url ? (
                           <button
                             type="button"
@@ -1276,6 +1285,52 @@ export default function ObservacionesPage() {
                         ) : (
                           <div style={{ fontSize: 12, color: "#6b7280" }}>Sin evidencia</div>
                         )}
+
+                        {isMobileViewport && <Pill text={s.label} tone={pillTone} />}
+
+                        {isMobileViewport && (
+                          <>
+                            <button
+                              onClick={() => openCerrarModal(o)}
+                              style={{
+                                background: "#16a34a",
+                                color: "white",
+                                border: "1px solid #15803d",
+                                padding: "6px 10px",
+                                borderRadius: 8,
+                                fontWeight: 800,
+                                fontSize: 12,
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: 8,
+                                width: "100%",
+                              }}
+                            >Cerrar</button>
+
+                            {canEditThis ? (
+                              <button
+                                onClick={() => openEditarModal(o)}
+                                style={{
+                                  background: "#f8fafc",
+                                  color: "#334155",
+                                  border: "1px solid #cbd5f5",
+                                  padding: "6px 10px",
+                                  borderRadius: 8,
+                                  fontWeight: 800,
+                                  fontSize: 12,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  gap: 8,
+                                  cursor: "pointer",
+                                  width: "100%",
+                                }}
+                              >Editar</button>
+                            ) : null}
+                          </>
+                        )}
                       </div>
 
                       <div
@@ -1283,7 +1338,8 @@ export default function ObservacionesPage() {
                           display: "grid",
                           gap: 8,
                           minWidth: 0,
-                          gridColumn: isMobileViewport ? "1 / -1" : undefined,
+                          gridColumn: isMobileViewport ? "1" : undefined,
+                          gridRow: isMobileViewport ? "2" : undefined,
                         }}
                       >
                         <div
@@ -1296,13 +1352,15 @@ export default function ObservacionesPage() {
                           }}
                         >
                           <div style={{ fontWeight: 900, fontSize: 13, color: "#111827" }}>Observacion:</div>
-                          <div style={{ marginLeft: "auto" }}>
-                            <Pill text={s.label} tone={pillTone} />
-                          </div>
+                          {!isMobileViewport && (
+                            <div style={{ marginLeft: "auto" }}>
+                              <Pill text={s.label} tone={pillTone} />
+                            </div>
+                          )}
                         </div>
                         <div style={{ fontSize: isMobileViewport ? 13 : 14, fontWeight: 800, lineHeight: 1.35, wordBreak: "break-word" }}>{o.descripcion}</div>
 
-                        <div style={{ marginTop: 4, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                        <div style={{ marginTop: 4, display: isMobileViewport ? "none" : "flex", gap: 10, flexWrap: "wrap" }}>
                           <button
                             onClick={() => openCerrarModal(o)}
                             style={{
@@ -1320,9 +1378,7 @@ export default function ObservacionesPage() {
                               flex: isMobileViewport ? "1 1 45%" : undefined,
                               justifyContent: "center",
                             }}
-                          >
-                            ✅ Cerrar
-                          </button>
+                          >Cerrar</button>
 
                           {canEditThis ? (
                             <button
@@ -1342,9 +1398,7 @@ export default function ObservacionesPage() {
                                 flex: isMobileViewport ? "1 1 45%" : undefined,
                                 justifyContent: "center",
                               }}
-                            >
-                              ✏️ Editar
-                            </button>
+                            >Editar</button>
                           ) : null}
                         </div>
                       </div>
@@ -1670,9 +1724,7 @@ export default function ObservacionesPage() {
                   fontWeight: 900,
                   cursor: "pointer",
                 }}
-              >
-                Cerrar
-              </button>
+              >Cerrar</button>
             </div>
 
             <div style={{ padding: 12, background: "#0b1220" }}>
@@ -1710,9 +1762,7 @@ export default function ObservacionesPage() {
             <div className={`${styles.card} ${styles.modalCardTight}`} role="dialog" aria-modal="true">
               <div className={styles.modalHeader}>
                 <div className={styles.modalTitle}>Configuracion de cuenta</div>
-                <button type="button" onClick={closeSettingsModal} className={styles.modalClose}>
-                  Cerrar
-                </button>
+                <button type="button" onClick={closeSettingsModal} className={styles.modalClose}>Cerrar</button>
               </div>
 
               {settingsError && <div className={styles.errorBox}>{settingsError}</div>}
@@ -1823,9 +1873,7 @@ export default function ObservacionesPage() {
                   type="button"
                   onClick={() => setNewOpen(false)}
                   className={styles.modalClose}
-                >
-                  Cerrar
-                </button>
+                >Cerrar</button>
               </div>
 
               {perfilErr && <div className={styles.errorBox}>{perfilErr}</div>}
@@ -1980,9 +2028,7 @@ export default function ObservacionesPage() {
                   type="button"
                   onClick={() => setEditOpen(false)}
                   className={styles.modalClose}
-                >
-                  Cerrar
-                </button>
+                >Cerrar</button>
               </div>
 
               {editError && <div className={styles.errorBox}>{editError}</div>}
@@ -2161,9 +2207,7 @@ export default function ObservacionesPage() {
                   type="button"
                   onClick={() => setCloseOpen(false)}
                   className={styles.modalClose}
-                >
-                  Cerrar
-                </button>
+                >Cerrar</button>
               </div>
 
               {closeError && <div className={styles.errorBox}>{closeError}</div>}
