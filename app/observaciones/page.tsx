@@ -479,8 +479,8 @@ export default function ObservacionesPage() {
       setSettingsError("Completa ambos campos.");
       return;
     }
-    if (pwd.length < 8) {
-      setSettingsError("La contrasena debe tener al menos 8 caracteres.");
+    if (pwd.length < 6) {
+      setSettingsError("La contrasena debe tener al menos 6 caracteres.");
       return;
     }
     if (pwd !== confirm) {
@@ -908,7 +908,7 @@ export default function ObservacionesPage() {
   const pageBg =
     'url("https://satljniaasognjpuncel.supabase.co/storage/v1/object/public/assets/fondos/fondo%20cerro.jpg")';
   const cardBg = "white";
-  const passwordLengthOk = settingsPassword.trim().length >= 8;
+  const passwordLengthOk = settingsPassword.trim().length >= 6;
   const passwordMatchOk =
     settingsPassword.trim().length > 0 && settingsPassword.trim() === settingsPasswordConfirm.trim();
 
@@ -1697,7 +1697,7 @@ export default function ObservacionesPage() {
                     value={settingsPassword}
                     onChange={(e) => setSettingsPassword(e.target.value)}
                     autoComplete="new-password"
-                    placeholder="Minimo 8 caracteres"
+                    placeholder="Minimo 6 caracteres"
                     className={styles.input}
                   />
                 </label>
@@ -1727,7 +1727,7 @@ export default function ObservacionesPage() {
                   }}
                 >
                   <div style={{ color: passwordLengthOk ? "#86efac" : "#fca5a5" }}>
-                    {passwordLengthOk ? "OK" : "Falta"}: minimo 8 caracteres
+                    {passwordLengthOk ? "OK" : "Falta"}: minimo 6 caracteres
                   </div>
                   <div style={{ color: passwordMatchOk ? "#86efac" : "#fca5a5" }}>
                     {passwordMatchOk ? "OK" : "Falta"}: confirmacion igual
