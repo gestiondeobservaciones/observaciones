@@ -182,6 +182,14 @@ export default function ObservacionesPage() {
     evidencia: false,
   });
 
+  // modal configuracion (cambio de contrasena)
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsPassword, setSettingsPassword] = useState("");
+  const [settingsPasswordConfirm, setSettingsPasswordConfirm] = useState("");
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [settingsOk, setSettingsOk] = useState<string | null>(null);
+
   // modal nueva
   const [newOpen, setNewOpen] = useState(false);
   const [newArea, setNewArea] = useState<string>(AREAS[0] || "chancado");
@@ -226,6 +234,7 @@ export default function ObservacionesPage() {
   const newEquipoRef = useRef<HTMLInputElement | null>(null);
   const editEquipoRef = useRef<HTMLInputElement | null>(null);
   const closeDescRef = useRef<HTMLTextAreaElement | null>(null);
+  const settingsPasswordRef = useRef<HTMLInputElement | null>(null);
 
   // modal zoom evidencia
   const [zoomOpen, setZoomOpen] = useState(false);
@@ -367,16 +376,28 @@ export default function ObservacionesPage() {
   }, []);
 
   useEffect(() => {
-    if (!newOpen && !editOpen && !closeOpen) return;
+    if (!newOpen && !editOpen && !closeOpen && !settingsOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
+      if (settingsOpen && !settingsSaving) setSettingsOpen(false);
       if (closeOpen && !savingClose) setCloseOpen(false);
       if (editOpen && !savingEdit && !editUploading) setEditOpen(false);
       if (newOpen && !savingNew && !newUploading) setNewOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [newOpen, editOpen, closeOpen, savingClose, savingEdit, editUploading, savingNew, newUploading]);
+  }, [
+    newOpen,
+    editOpen,
+    closeOpen,
+    settingsOpen,
+    settingsSaving,
+    savingClose,
+    savingEdit,
+    editUploading,
+    savingNew,
+    newUploading,
+  ]);
 
   useEffect(() => {
     if (newOpen) newEquipoRef.current?.focus();
@@ -391,16 +412,20 @@ export default function ObservacionesPage() {
   }, [closeOpen]);
 
   useEffect(() => {
-    if (!newOpen && !editOpen && !closeOpen && !zoomOpen) return;
+    if (settingsOpen) settingsPasswordRef.current?.focus();
+  }, [settingsOpen]);
+
+  useEffect(() => {
+    if (!newOpen && !editOpen && !closeOpen && !settingsOpen && !zoomOpen) return;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prevOverflow;
     };
-  }, [newOpen, editOpen, closeOpen, zoomOpen]);
+  }, [newOpen, editOpen, closeOpen, settingsOpen, zoomOpen]);
 
   useEffect(() => {
-    if (!newOpen && !editOpen && !closeOpen) return;
+    if (!newOpen && !editOpen && !closeOpen && !settingsOpen) return;
     const root = document.documentElement;
     const vv = window.visualViewport;
 
@@ -420,11 +445,62 @@ export default function ObservacionesPage() {
       window.removeEventListener("resize", setModalVh);
       root.style.removeProperty("--modal-vh");
     };
-  }, [newOpen, editOpen, closeOpen]);
+  }, [newOpen, editOpen, closeOpen, settingsOpen]);
 
   async function logout() {
     await supabase.auth.signOut();
     window.location.href = "/login";
+  }
+
+  function openSettingsModal() {
+    setSettingsPassword("");
+    setSettingsPasswordConfirm("");
+    setSettingsError(null);
+    setSettingsOk(null);
+    setSettingsOpen(true);
+  }
+
+  function closeSettingsModal() {
+    if (settingsSaving) return;
+    setSettingsOpen(false);
+  }
+
+  async function guardarNuevaContrasena(e: React.FormEvent) {
+    e.preventDefault();
+    if (settingsSaving) return;
+
+    setSettingsError(null);
+    setSettingsOk(null);
+
+    const pwd = settingsPassword.trim();
+    const confirm = settingsPasswordConfirm.trim();
+
+    if (!pwd || !confirm) {
+      setSettingsError("Completa ambos campos.");
+      return;
+    }
+    if (pwd.length < 8) {
+      setSettingsError("La contrasena debe tener al menos 8 caracteres.");
+      return;
+    }
+    if (pwd !== confirm) {
+      setSettingsError("Las contrasenas no coinciden.");
+      return;
+    }
+
+    setSettingsSaving(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: pwd });
+      if (error) throw error;
+      setSettingsOk("Contrasena actualizada correctamente.");
+      setSettingsPassword("");
+      setSettingsPasswordConfirm("");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setSettingsError(msg || "No se pudo actualizar la contrasena.");
+    } finally {
+      setSettingsSaving(false);
+    }
   }
 
   function openZoom(url: string, label: string) {
@@ -832,6 +908,9 @@ export default function ObservacionesPage() {
   const pageBg =
     'url("https://satljniaasognjpuncel.supabase.co/storage/v1/object/public/assets/fondos/fondo%20cerro.jpg")';
   const cardBg = "white";
+  const passwordLengthOk = settingsPassword.trim().length >= 8;
+  const passwordMatchOk =
+    settingsPassword.trim().length > 0 && settingsPassword.trim() === settingsPasswordConfirm.trim();
 
   if (loading) {
     return (
@@ -989,6 +1068,29 @@ export default function ObservacionesPage() {
             }}
           >
             Recargar
+          </button>
+
+          <button
+            onClick={openSettingsModal}
+            title="Configuracion"
+            aria-label="Configuracion"
+            style={{
+              padding: "10px 12px",
+              minWidth: 46,
+              borderRadius: 10,
+              border: "1px solid #d1d5db",
+              background: "white",
+              fontWeight: 900,
+              fontSize: 18,
+              lineHeight: 1,
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flex: isMobileViewport ? "0 0 auto" : undefined,
+            }}
+          >
+            ⚙
           </button>
 
           <button
@@ -1550,6 +1652,115 @@ export default function ObservacionesPage() {
       )}
 
       {/* Modal Nueva Observación */}
+      {settingsOpen && (
+        <div
+          onClick={closeSettingsModal}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(2,6,23,0.65)",
+            zIndex: 70,
+          }}
+          className={styles.modalOverlay}
+        >
+          <div onClick={(e) => e.stopPropagation()} className={`${styles.modalPanel} ${styles.modalPanelNarrow}`}>
+            <div className={`${styles.card} ${styles.modalCardTight}`} role="dialog" aria-modal="true">
+              <div className={styles.modalHeader}>
+                <div className={styles.modalTitle}>Configuracion de cuenta</div>
+                <button type="button" onClick={closeSettingsModal} className={styles.modalClose}>
+                  Cerrar
+                </button>
+              </div>
+
+              {settingsError && <div className={styles.errorBox}>{settingsError}</div>}
+              {settingsOk && (
+                <div
+                  style={{
+                    padding: 12,
+                    borderRadius: 12,
+                    border: "1px solid rgba(34,197,94,0.5)",
+                    background: "rgba(34,197,94,0.14)",
+                    color: "#dcfce7",
+                    fontWeight: 700,
+                  }}
+                >
+                  {settingsOk}
+                </div>
+              )}
+
+              <form onSubmit={guardarNuevaContrasena} className={styles.form}>
+                <label className={styles.field}>
+                  <span className={styles.label}>Nueva contrasena</span>
+                  <input
+                    ref={settingsPasswordRef}
+                    type="password"
+                    value={settingsPassword}
+                    onChange={(e) => setSettingsPassword(e.target.value)}
+                    autoComplete="new-password"
+                    placeholder="Minimo 8 caracteres"
+                    className={styles.input}
+                  />
+                </label>
+
+                <label className={styles.field}>
+                  <span className={styles.label}>Confirmar contrasena</span>
+                  <input
+                    type="password"
+                    value={settingsPasswordConfirm}
+                    onChange={(e) => setSettingsPasswordConfirm(e.target.value)}
+                    autoComplete="new-password"
+                    placeholder="Repite la nueva contrasena"
+                    className={styles.input}
+                  />
+                </label>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gap: 6,
+                    fontSize: 12,
+                    color: "#cbd5f5",
+                    padding: "8px 10px",
+                    border: "1px solid rgba(148,163,184,0.35)",
+                    borderRadius: 10,
+                    background: "rgba(15,23,42,0.35)",
+                  }}
+                >
+                  <div style={{ color: passwordLengthOk ? "#86efac" : "#fca5a5" }}>
+                    {passwordLengthOk ? "OK" : "Falta"}: minimo 8 caracteres
+                  </div>
+                  <div style={{ color: passwordMatchOk ? "#86efac" : "#fca5a5" }}>
+                    {passwordMatchOk ? "OK" : "Falta"}: confirmacion igual
+                  </div>
+                </div>
+
+                <div className={styles.modalActions}>
+                  <button
+                    type="button"
+                    onClick={closeSettingsModal}
+                    disabled={settingsSaving}
+                    style={{
+                      padding: "12px 16px",
+                      borderRadius: 12,
+                      border: "1px solid rgba(148,163,184,0.45)",
+                      background: "rgba(15,23,42,0.7)",
+                      color: "#e2e8f0",
+                      fontWeight: 800,
+                      cursor: settingsSaving ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                  <button type="submit" disabled={settingsSaving} className={styles.submit}>
+                    {settingsSaving ? "Guardando..." : "Actualizar contrasena"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
       {newOpen && (
         <div
           onClick={() => !savingNew && !newUploading && setNewOpen(false)}
