@@ -188,11 +188,23 @@ function PublicoPageContent() {
   }, []);
 
   useEffect(() => {
-    const media = window.matchMedia("(max-width: 768px)");
-    const syncViewport = () => setIsMobile(media.matches);
-    syncViewport();
-    media.addEventListener("change", syncViewport);
-    return () => media.removeEventListener("change", syncViewport);
+    const detectMobile = () => {
+      const innerW = window.innerWidth || Number.POSITIVE_INFINITY;
+      const screenW = window.screen?.width || Number.POSITIVE_INFINITY;
+      const vvW = window.visualViewport?.width || Number.POSITIVE_INFINITY;
+      const width = Math.min(innerW, screenW, vvW);
+      const touchDevice = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+      setIsMobile(width <= 920 || touchDevice);
+    };
+    detectMobile();
+    window.addEventListener("resize", detectMobile);
+    window.addEventListener("orientationchange", detectMobile);
+    window.visualViewport?.addEventListener("resize", detectMobile);
+    return () => {
+      window.removeEventListener("resize", detectMobile);
+      window.removeEventListener("orientationchange", detectMobile);
+      window.visualViewport?.removeEventListener("resize", detectMobile);
+    };
   }, []);
 
   useEffect(() => {
@@ -254,6 +266,9 @@ function PublicoPageContent() {
   const pageBg =
     'url("https://satljniaasognjpuncel.supabase.co/storage/v1/object/public/assets/fondos/cerro%205.jpg")';
   const cardBg = "white";
+  const shellPad = isMobile ? 6 : 16;
+  const panelPad = isMobile ? 10 : 14;
+  const itemPad = isMobile ? 12 : 16;
 
   if (loading) {
     return (
@@ -279,11 +294,12 @@ function PublicoPageContent() {
       style={{
         background: pageBg,
         minHeight: "100vh",
-        padding: isMobile ? 10 : 16,
+        padding: shellPad,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
-        backgroundAttachment: "fixed",
+        backgroundAttachment: isMobile ? "scroll" : "fixed",
+        overflowX: "clip",
       }}
     >
       <div
@@ -337,7 +353,7 @@ function PublicoPageContent() {
           background: "white",
           border: "1px solid #e5e7eb",
           borderRadius: 14,
-          padding: 14,
+          padding: panelPad,
           maxWidth: 1100,
           margin: "0 auto 14px auto",
           display: "flex",
@@ -396,9 +412,10 @@ function PublicoPageContent() {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 10,
+            gap: isMobile ? 8 : 10,
             flexWrap: "wrap",
             width: isMobile ? "100%" : "auto",
+            justifyContent: isMobile ? "space-between" : "flex-start",
           }}
         >
           <button
@@ -418,6 +435,8 @@ function PublicoPageContent() {
               alignItems: "center",
               gap: 8,
               cursor: "pointer",
+              flex: isMobile ? "1 1 48%" : undefined,
+              justifyContent: "center",
             }}
           >
             &#128274; Iniciar sesi&oacute;n
@@ -436,6 +455,8 @@ function PublicoPageContent() {
               letterSpacing: 0.2,
               boxShadow: "0 10px 22px rgba(37,99,235,0.18)",
               cursor: "pointer",
+              flex: isMobile ? "1 1 48%" : undefined,
+              justifyContent: "center",
             }}
           >
             &#128257; Recargar
@@ -444,14 +465,14 @@ function PublicoPageContent() {
       </div>
 
       {/* Listado */}
-      <div style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gap: 14 }}>
+      <div style={{ maxWidth: 1100, width: "100%", margin: "0 auto", display: "grid", gap: 14 }}>
         {/* Pendientes */}
         <div
           style={{
             background: "rgba(15, 23, 42, 0.35)",
             border: "1px solid rgba(148, 163, 184, 0.45)",
             borderRadius: 14,
-            padding: 14,
+            padding: panelPad,
             boxShadow: "0 20px 50px rgba(2, 6, 23, 0.35)",
             backdropFilter: "blur(8px)",
             outline: "1px solid rgba(148, 163, 184, 0.15)",
@@ -475,7 +496,7 @@ function PublicoPageContent() {
                   style={{
                     border: `1px solid ${getRiesgoColor(o.categoria)}`,
                     borderRadius: 16,
-                    padding: 16,
+                    padding: itemPad,
                     background: "linear-gradient(180deg, #DCE6F2 0%, #C9D6E6 100%)",
                     boxShadow: "0 6px 16px rgba(15,23,42,0.08)",
                   }}
@@ -483,16 +504,23 @@ function PublicoPageContent() {
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "1fr 120px 1fr",
-                      gap: 12,
-                      alignItems: "center",
+                      gridTemplateColumns: isMobile ? "1fr 96px" : "1fr 120px 1fr",
+                      gap: isMobile ? 8 : 12,
+                      alignItems: isMobile ? "start" : "center",
                     }}
                   >
-                      <div style={{ display: "grid", gap: 6 }}>
+                      <div style={{ display: "grid", gap: 6, minWidth: 0 }}>
                         <div style={{ fontSize: 12, fontWeight: 900 }}>
                           REPORTANTE: <span style={{ textTransform: "uppercase" }}>{o.responsable}</span>
                         </div>
-                        <div style={{ fontSize: 16, fontWeight: 900 }}>
+                        <div
+                          style={{
+                            fontSize: isMobile ? 15 : 16,
+                            fontWeight: 900,
+                            lineHeight: 1.2,
+                            wordBreak: "break-word",
+                          }}
+                        >
                           {o.area} &middot; {o.equipo_lugar}
                         </div>
                         <div style={{ fontSize: 12, color: "#2563eb", fontWeight: 900 }}>
@@ -519,7 +547,7 @@ function PublicoPageContent() {
                         </div>
                       </div>
 
-                      <div style={{ display: "grid", placeItems: "center" }}>
+                      <div style={{ display: "grid", placeItems: "center", alignSelf: "start" }}>
                         {o.evidencia_url ? (
                           <button
                             type="button"
@@ -532,8 +560,8 @@ function PublicoPageContent() {
                               borderRadius: 14,
                               padding: 3,
                               cursor: "zoom-in",
-                              width: 116,
-                              height: 116,
+                              width: isMobile ? 96 : 116,
+                              height: isMobile ? 96 : 116,
                               display: "grid",
                               placeItems: "center",
                             }}
@@ -541,10 +569,10 @@ function PublicoPageContent() {
                             <ThumbImage
                               src={o.evidencia_url}
                               alt="Evidencia"
-                              thumbWidth={110}
+                              thumbWidth={isMobile ? 90 : 110}
                               style={{
-                                width: 110,
-                                height: 110,
+                                width: isMobile ? 90 : 110,
+                                height: isMobile ? 90 : 110,
                                 objectFit: "contain",
                                 borderRadius: 8,
                               }}
@@ -555,14 +583,31 @@ function PublicoPageContent() {
                         )}
                       </div>
 
-                      <div style={{ display: "grid", gap: 8, alignSelf: "start" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div
+                        style={{
+                          display: "grid",
+                          gap: 8,
+                          alignSelf: "start",
+                          minWidth: 0,
+                          gridColumn: isMobile ? "1 / -1" : undefined,
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                           <div style={{ fontWeight: 900, fontSize: 13, color: "#111827" }}>Observaci&oacute;n:</div>
                           <div style={{ marginLeft: "auto" }}>
                             <Pill text={s.label} tone={pillTone} />
                           </div>
                         </div>
-                        <div style={{ fontSize: 14, fontWeight: 800 }}>{o.descripcion}</div>
+                        <div
+                          style={{
+                            fontSize: isMobile ? 13 : 14,
+                            fontWeight: 800,
+                            lineHeight: 1.35,
+                            wordBreak: "break-word",
+                          }}
+                        >
+                          {o.descripcion}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -578,7 +623,7 @@ function PublicoPageContent() {
             background: "rgba(15, 23, 42, 0.35)",
             border: "1px solid rgba(148, 163, 184, 0.45)",
             borderRadius: 14,
-            padding: 14,
+            padding: panelPad,
             boxShadow: "0 20px 50px rgba(2, 6, 23, 0.35)",
             backdropFilter: "blur(8px)",
             outline: "1px solid rgba(148, 163, 184, 0.15)",
@@ -598,7 +643,7 @@ function PublicoPageContent() {
                   style={{
                     border: `1px solid ${getRiesgoColor(o.categoria)}`,
                     borderRadius: 16,
-                    padding: isMobile ? 12 : 16,
+                    padding: itemPad,
                     background: "linear-gradient(180deg, #DCE6F2 0%, #C9D6E6 100%)",
                     boxShadow: "0 6px 16px rgba(15,23,42,0.08)",
                   }}
@@ -655,8 +700,8 @@ function PublicoPageContent() {
                                 type="button"
                                 onClick={() => openZoom(o.evidencia_url || "", "Antes")}
                                 style={{
-                                  width: 120,
-                                  height: 120,
+                              width: isMobile ? 104 : 120,
+                              height: isMobile ? 104 : 120,
                                   borderRadius: 14,
                                   border: "1px solid rgba(14,165,233,0.45)",
                                   background:
@@ -672,10 +717,10 @@ function PublicoPageContent() {
                                 <ThumbImage
                                   src={o.evidencia_url}
                                   alt="Antes"
-                                  thumbWidth={108}
+                                  thumbWidth={isMobile ? 92 : 108}
                                   style={{
-                                    width: 108,
-                                    height: 108,
+                                    width: isMobile ? 92 : 108,
+                                    height: isMobile ? 92 : 108,
                                     borderRadius: 10,
                                     objectFit: "contain",
                                     display: "block",
@@ -692,8 +737,8 @@ function PublicoPageContent() {
                                 type="button"
                                 onClick={() => openZoom(o.cierre_evidencia_url || "", "Despu&eacute;s")}
                                 style={{
-                                  width: 120,
-                                  height: 120,
+                                  width: isMobile ? 104 : 120,
+                                  height: isMobile ? 104 : 120,
                                   borderRadius: 14,
                                   border: "1px solid rgba(14,165,233,0.45)",
                                   background:
@@ -709,10 +754,10 @@ function PublicoPageContent() {
                                 <ThumbImage
                                   src={o.cierre_evidencia_url}
                                   alt="Despu&eacute;s"
-                                  thumbWidth={108}
+                                  thumbWidth={isMobile ? 92 : 108}
                                   style={{
-                                    width: 108,
-                                    height: 108,
+                                    width: isMobile ? 92 : 108,
+                                    height: isMobile ? 92 : 108,
                                     borderRadius: 10,
                                     objectFit: "contain",
                                     display: "block",
@@ -730,14 +775,37 @@ function PublicoPageContent() {
                       )}
                     </div>
 
-                    <div className="min-w-0" style={{ display: "grid", gap: 8 }}>
-                      <div className="flex items-center gap-2">
+                    <div style={{ display: "grid", gap: 8, minWidth: 0 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: isMobile ? "flex-start" : "center",
+                          flexDirection: isMobile ? "column" : "row",
+                          gap: 8,
+                        }}
+                      >
                         <div style={{ fontWeight: 900, fontSize: 13, color: "#111827" }}>Observaci&oacute;n:</div>
-                        <div className="ml-auto flex items-center gap-2">
+                        <div
+                          style={{
+                            marginLeft: isMobile ? 0 : "auto",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
                           <Pill text="Cerrada" tone="gray" />
                         </div>
                       </div>
-                      <div style={{ fontSize: 14, fontWeight: 800 }}>{o.descripcion}</div>
+                      <div
+                        style={{
+                          fontSize: isMobile ? 13 : 14,
+                          fontWeight: 800,
+                          lineHeight: 1.35,
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {o.descripcion}
+                      </div>
 
                       <div
                         style={{
@@ -748,6 +816,8 @@ function PublicoPageContent() {
                           border: "1px solid #e5e7eb",
                           borderRadius: 10,
                           padding: 10,
+                          wordBreak: "break-word",
+                          lineHeight: 1.35,
                         }}
                       >
                         &#128736; Trabajo realizado: {o.cierre_descripcion || "—"}

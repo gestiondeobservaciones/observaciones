@@ -1041,11 +1041,16 @@ export default function ObservacionesPage() {
 
         <div
           style={{
-            display: "flex",
-            gap: isMobileViewport ? 8 : 10,
-            flexWrap: "wrap",
+            display: isMobileViewport ? "grid" : "flex",
+            gap: isMobileViewport ? undefined : 10,
+            columnGap: isMobileViewport ? 8 : undefined,
+            rowGap: isMobileViewport ? 8 : undefined,
+            gridTemplateColumns: isMobileViewport
+              ? "minmax(0,1fr) minmax(0,1fr) 46px 46px 46px"
+              : undefined,
             width: isMobileViewport ? "100%" : "auto",
-            justifyContent: isMobileViewport ? "space-between" : "flex-end",
+            justifyContent: isMobileViewport ? undefined : "flex-end",
+            alignItems: "center",
           }}
         >
           <button
@@ -1062,7 +1067,7 @@ export default function ObservacionesPage() {
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
-              flex: isMobileViewport ? "1 1 100%" : undefined,
+              gridColumn: isMobileViewport ? "1 / span 3" : undefined,
             }}
           >
             Nueva observacion
@@ -1080,7 +1085,7 @@ export default function ObservacionesPage() {
               background: "white",
               fontWeight: 800,
               cursor: "pointer",
-              flex: isMobileViewport ? "1 1 45%" : undefined,
+              gridColumn: isMobileViewport ? "1 / span 2" : undefined,
             }}
           >
             Recargar
@@ -1103,7 +1108,7 @@ export default function ObservacionesPage() {
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              flex: isMobileViewport ? "0 0 auto" : undefined,
+              gridColumn: isMobileViewport ? "3" : undefined,
             }}
           >
             {"\u2699"}
@@ -1127,7 +1132,7 @@ export default function ObservacionesPage() {
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              flex: isMobileViewport ? "0 0 auto" : undefined,
+              gridColumn: isMobileViewport ? "4" : undefined,
             }}
           >
             {"\u23FB"}
@@ -1151,7 +1156,7 @@ export default function ObservacionesPage() {
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              flex: isMobileViewport ? "0 0 auto" : undefined,
+              gridColumn: isMobileViewport ? "5" : undefined,
             }}
           >
             {"\uD83D\uDCCA"}
@@ -1200,8 +1205,8 @@ export default function ObservacionesPage() {
                     <div
                       style={{
                         display: "grid",
-                        gridTemplateColumns: isMobileViewport ? "1fr" : "1fr 120px 1fr",
-                        gap: isMobileViewport ? 10 : 12,
+                        gridTemplateColumns: isMobileViewport ? "1fr 96px" : "1fr 120px 1fr",
+                        gap: isMobileViewport ? 8 : 12,
                         alignItems: isMobileViewport ? "start" : "center",
                       }}
                     >
@@ -1237,7 +1242,7 @@ export default function ObservacionesPage() {
                         </div>
                       </div>
 
-                      <div style={{ display: "grid", placeItems: "center" }}>
+                      <div style={{ display: "grid", placeItems: "center", alignSelf: "start" }}>
                         {o.evidencia_url ? (
                           <button
                             type="button"
@@ -1273,17 +1278,25 @@ export default function ObservacionesPage() {
                         )}
                       </div>
 
-                      <div style={{ display: "grid", gap: 8 }}>
+                      <div
+                        style={{
+                          display: "grid",
+                          gap: 8,
+                          minWidth: 0,
+                          gridColumn: isMobileViewport ? "1 / -1" : undefined,
+                        }}
+                      >
                         <div
                           style={{
                             display: "flex",
-                            alignItems: isMobileViewport ? "flex-start" : "center",
-                            flexDirection: isMobileViewport ? "column" : "row",
+                            alignItems: "center",
+                            flexDirection: "row",
                             gap: 8,
+                            flexWrap: "wrap",
                           }}
                         >
                           <div style={{ fontWeight: 900, fontSize: 13, color: "#111827" }}>Observacion:</div>
-                          <div style={{ marginLeft: isMobileViewport ? 0 : "auto" }}>
+                          <div style={{ marginLeft: "auto" }}>
                             <Pill text={s.label} tone={pillTone} />
                           </div>
                         </div>
