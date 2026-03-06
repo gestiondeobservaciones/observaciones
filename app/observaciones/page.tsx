@@ -1041,36 +1041,34 @@ export default function ObservacionesPage() {
 
         <div
           style={{
-            display: isMobileViewport ? "grid" : "flex",
-            gap: isMobileViewport ? undefined : 10,
-            columnGap: isMobileViewport ? 8 : undefined,
-            rowGap: isMobileViewport ? 8 : undefined,
-            gridTemplateColumns: isMobileViewport
-              ? "minmax(0,1fr) minmax(0,1fr) 46px 46px 46px"
-              : undefined,
+            display: "grid",
+            gap: 8,
+            gridTemplateColumns: isMobileViewport ? "repeat(5, minmax(0, 1fr))" : "repeat(5, 56px)",
             width: isMobileViewport ? "100%" : "auto",
-            justifyContent: isMobileViewport ? undefined : "flex-end",
+            justifyContent: isMobileViewport ? undefined : "end",
             alignItems: "center",
           }}
         >
           <button
             onClick={openNuevaModal}
+            title="Nueva observacion"
+            aria-label="Nueva observacion"
             style={{
               background: "#0ea5e9",
               color: "white",
-              padding: "10px 14px",
+              padding: "10px 0",
+              minHeight: 48,
               borderRadius: 10,
-              border: "1px solid rgba(0,0,0,0.12)",
+              border: "1px solid rgba(14,165,233,0.7)",
               fontWeight: 800,
               display: "inline-flex",
-              gap: 8,
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
-              gridColumn: isMobileViewport ? "1 / span 3" : undefined,
+              fontSize: 22,
             }}
           >
-            {"\u2795"} Nueva observacion
+            {"\u2795"}
           </button>
 
           <button
@@ -1078,68 +1076,24 @@ export default function ObservacionesPage() {
               await loadPerfil();
               await load();
             }}
+            title="Recargar"
+            aria-label="Recargar"
             style={{
-              padding: "10px 14px",
+              padding: "10px 0",
+              minHeight: 48,
               borderRadius: 10,
-              border: "1px solid #d1d5db",
-              background: "white",
-              fontWeight: 800,
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
-              gridColumn: isMobileViewport ? "1 / span 2" : undefined,
-            }}
-          >
-            {"\ud83d\udd04"} Recargar
-          </button>
-
-          <button
-            onClick={openSettingsModal}
-            title="Configuracion"
-            aria-label="Configuracion"
-            style={{
-              padding: "10px 12px",
-              minWidth: 46,
-              borderRadius: 10,
-              border: "1px solid #d1d5db",
-              background: "white",
-              fontWeight: 900,
-              fontSize: 18,
-              lineHeight: 1,
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gridColumn: isMobileViewport ? "3" : undefined,
-            }}
-          >
-            {"\u2699"}
-          </button>
-
-          <button
-            onClick={logout}
-            title="Salir"
-            aria-label="Salir"
-            style={{
-              padding: "10px 12px",
-              minWidth: 46,
-              borderRadius: 10,
-              border: "1px solid #111827",
-              background: "#111827",
+              border: "1px solid rgba(14,165,233,0.7)",
+              background: "#0ea5e9",
               color: "white",
               fontWeight: 900,
-              fontSize: 18,
-              lineHeight: 1,
               cursor: "pointer",
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              gridColumn: isMobileViewport ? "4" : undefined,
+              fontSize: 22,
             }}
           >
-            {"\ud83d\udeaa"}
+            {"\ud83d\udd04"}
           </button>
 
           <a
@@ -1147,24 +1101,69 @@ export default function ObservacionesPage() {
             title="Dashboard"
             aria-label="Dashboard"
             style={{
-              padding: "10px 12px",
-              minWidth: 46,
+              padding: "10px 0",
+              minHeight: 48,
               borderRadius: 10,
-              border: "1px solid #0ea5e9",
+              border: "1px solid rgba(14,165,233,0.7)",
               background: "#0ea5e9",
               color: "white",
               fontWeight: 900,
-              fontSize: 18,
+              fontSize: 22,
               lineHeight: 1,
               textDecoration: "none",
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              gridColumn: isMobileViewport ? "5" : undefined,
             }}
           >
             {"\uD83D\uDCCA"}
           </a>
+
+          <button
+            onClick={openSettingsModal}
+            title="Configuracion"
+            aria-label="Configuracion"
+            style={{
+              padding: "10px 0",
+              minHeight: 48,
+              borderRadius: 10,
+              border: "1px solid rgba(14,165,233,0.7)",
+              background: "#0ea5e9",
+              color: "white",
+              fontWeight: 900,
+              fontSize: 22,
+              lineHeight: 1,
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {"\u2699\ufe0f"}
+          </button>
+
+          <button
+            onClick={logout}
+            title="Salir"
+            aria-label="Salir"
+            style={{
+              padding: "10px 0",
+              minHeight: 48,
+              borderRadius: 10,
+              border: "1px solid rgba(14,165,233,0.7)",
+              background: "#0ea5e9",
+              color: "white",
+              fontWeight: 900,
+              fontSize: 22,
+              lineHeight: 1,
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {"\ud83d\udeaa"}
+          </button>
         </div>
       </div>
 
