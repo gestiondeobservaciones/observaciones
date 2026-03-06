@@ -1095,38 +1095,50 @@ export default function ObservacionesPage() {
 
           <button
             onClick={logout}
+            title="Salir"
+            aria-label="Salir"
             style={{
-              padding: "10px 14px",
+              padding: "10px 12px",
+              minWidth: 46,
               borderRadius: 10,
               border: "1px solid #111827",
               background: "#111827",
               color: "white",
               fontWeight: 900,
+              fontSize: 18,
+              lineHeight: 1,
               cursor: "pointer",
-              flex: isMobileViewport ? "1 1 100px" : undefined,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flex: isMobileViewport ? "0 0 auto" : undefined,
             }}
           >
-            Salir
+            {"\u23FB"}
           </button>
 
           <a
             href="/dashboard"
+            title="Dashboard"
+            aria-label="Dashboard"
             style={{
-              padding: "10px 14px",
+              padding: "10px 12px",
+              minWidth: 46,
               borderRadius: 10,
               border: "1px solid #0ea5e9",
               background: "#0ea5e9",
               color: "white",
               fontWeight: 900,
+              fontSize: 18,
+              lineHeight: 1,
               textDecoration: "none",
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: 8,
-              flex: isMobileViewport ? "1 1 120px" : undefined,
+              flex: isMobileViewport ? "0 0 auto" : undefined,
             }}
           >
-            Dashboard
+            {"\uD83D\uDCCA"}
           </a>
         </div>
       </div>
