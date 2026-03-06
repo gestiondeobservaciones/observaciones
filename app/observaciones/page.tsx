@@ -371,11 +371,11 @@ export default function ObservacionesPage() {
   useEffect(() => {
     const detectMobileViewport = () => {
       const innerW = window.innerWidth || Number.POSITIVE_INFINITY;
-      const screenW = window.screen?.width || Number.POSITIVE_INFINITY;
-      const vvW = window.visualViewport?.width || Number.POSITIVE_INFINITY;
-      const width = Math.min(innerW, screenW, vvW);
-      const touchDevice = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
-      setIsMobileViewport(width <= 920 || touchDevice);
+      const vvW = window.visualViewport?.width || innerW;
+      const width = Math.min(innerW, vvW);
+      // Importante: no usar screen.width ni pointer coarse para permitir
+      // que "modo escritorio" en celular active el layout desktop.
+      setIsMobileViewport(width <= 900);
     };
     detectMobileViewport();
     window.addEventListener("resize", detectMobileViewport);

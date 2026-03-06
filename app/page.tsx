@@ -190,11 +190,11 @@ function PublicoPageContent() {
   useEffect(() => {
     const detectMobile = () => {
       const innerW = window.innerWidth || Number.POSITIVE_INFINITY;
-      const screenW = window.screen?.width || Number.POSITIVE_INFINITY;
-      const vvW = window.visualViewport?.width || Number.POSITIVE_INFINITY;
-      const width = Math.min(innerW, screenW, vvW);
-      const touchDevice = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
-      setIsMobile(width <= 920 || touchDevice);
+      const vvW = window.visualViewport?.width || innerW;
+      const width = Math.min(innerW, vvW);
+      // Importante: no usar screen.width ni pointer coarse para permitir
+      // que "modo escritorio" en celular active el layout desktop.
+      setIsMobile(width <= 900);
     };
     detectMobile();
     window.addEventListener("resize", detectMobile);
@@ -327,7 +327,7 @@ function PublicoPageContent() {
             left: "50%",
             top: "50%",
             transform: "translate(-50%, -50%)",
-            width: isMobile ? "58%" : "60%",
+            width: isMobile ? "48%" : "60%",
             height: "auto",
             objectFit: "contain",
             pointerEvents: "none",
@@ -340,7 +340,7 @@ function PublicoPageContent() {
             position: "absolute",
             right: 12,
             top: 12,
-            width: isMobile ? "min(92px, 24vw)" : "min(140px, 30vw)",
+            width: isMobile ? "min(74px, 18vw)" : "min(140px, 30vw)",
             height: "auto",
             display: "block",
           }}
