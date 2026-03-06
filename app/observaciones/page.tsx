@@ -1332,11 +1332,7 @@ export default function ObservacionesPage() {
                             >
                               ✏️ Editar
                             </button>
-                          ) : (
-                            <div style={{ fontSize: 12, color: "#334155", fontWeight: 700 }}>
-                              Solo el creador o admin puede editar.
-                            </div>
-                          )}
+                          ) : null}
                         </div>
                       </div>
                     </div>
