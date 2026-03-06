@@ -1070,7 +1070,7 @@ export default function ObservacionesPage() {
               gridColumn: isMobileViewport ? "1 / span 3" : undefined,
             }}
           >
-            Nueva observacion
+            {"\u2795"} Nueva observacion
           </button>
 
           <button
@@ -1085,10 +1085,14 @@ export default function ObservacionesPage() {
               background: "white",
               fontWeight: 800,
               cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
               gridColumn: isMobileViewport ? "1 / span 2" : undefined,
             }}
           >
-            Recargar
+            {"\ud83d\udd04"} Recargar
           </button>
 
           <button
@@ -1135,7 +1139,7 @@ export default function ObservacionesPage() {
               gridColumn: isMobileViewport ? "4" : undefined,
             }}
           >
-            {"\u23FB"}
+            {"\ud83d\udeaa"}
           </button>
 
           <a
