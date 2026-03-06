@@ -1138,7 +1138,7 @@ export default function ObservacionesPage() {
               flex: isMobileViewport ? "0 0 auto" : undefined,
             }}
           >
-            {"\uD83D\uDCCA"}
+            {"\uD83D\uDCC8"}
           </a>
         </div>
       </div>
