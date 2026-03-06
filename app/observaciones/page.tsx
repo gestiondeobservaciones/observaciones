@@ -369,10 +369,23 @@ export default function ObservacionesPage() {
   }, []);
 
   useEffect(() => {
-    const onResize = () => setIsMobileViewport(window.innerWidth <= 860);
-    onResize();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    const detectMobileViewport = () => {
+      const innerW = window.innerWidth || Number.POSITIVE_INFINITY;
+      const screenW = window.screen?.width || Number.POSITIVE_INFINITY;
+      const vvW = window.visualViewport?.width || Number.POSITIVE_INFINITY;
+      const width = Math.min(innerW, screenW, vvW);
+      const touchDevice = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+      setIsMobileViewport(width <= 920 || touchDevice);
+    };
+    detectMobileViewport();
+    window.addEventListener("resize", detectMobileViewport);
+    window.addEventListener("orientationchange", detectMobileViewport);
+    window.visualViewport?.addEventListener("resize", detectMobileViewport);
+    return () => {
+      window.removeEventListener("resize", detectMobileViewport);
+      window.removeEventListener("orientationchange", detectMobileViewport);
+      window.visualViewport?.removeEventListener("resize", detectMobileViewport);
+    };
   }, []);
 
   useEffect(() => {
@@ -911,12 +924,15 @@ export default function ObservacionesPage() {
   const passwordLengthOk = settingsPassword.trim().length >= 6;
   const passwordMatchOk =
     settingsPassword.trim().length > 0 && settingsPassword.trim() === settingsPasswordConfirm.trim();
+  const shellPad = isMobileViewport ? 6 : 16;
+  const panelPad = isMobileViewport ? 10 : 14;
+  const itemPad = isMobileViewport ? 12 : 16;
 
   if (loading) {
     return (
       <div
         style={{
-          padding: isMobileViewport ? 10 : 20,
+          padding: isMobileViewport ? 8 : 20,
           background: pageBg,
           minHeight: "100vh",
           backgroundSize: "cover",
@@ -948,12 +964,12 @@ export default function ObservacionesPage() {
       style={{
         background: pageBg,
         minHeight: "100vh",
-        padding: isMobileViewport ? 8 : 16,
+        padding: shellPad,
         backgroundSize: "cover",
         backgroundPosition: "center top",
         backgroundRepeat: "no-repeat",
         backgroundAttachment: isMobileViewport ? "scroll" : "fixed",
-        overflowX: "hidden",
+        overflowX: "clip",
       }}
     >
       {/* Header */}
@@ -962,7 +978,7 @@ export default function ObservacionesPage() {
           background: "white",
           border: "1px solid #e5e7eb",
           borderRadius: 14,
-          padding: isMobileViewport ? 10 : 14,
+          padding: panelPad,
           maxWidth: 1100,
           width: "100%",
           margin: "0 auto 14px auto",
@@ -1026,10 +1042,10 @@ export default function ObservacionesPage() {
         <div
           style={{
             display: "flex",
-            gap: 10,
+            gap: isMobileViewport ? 8 : 10,
             flexWrap: "wrap",
             width: isMobileViewport ? "100%" : "auto",
-            justifyContent: isMobileViewport ? "flex-start" : "flex-end",
+            justifyContent: isMobileViewport ? "space-between" : "flex-end",
           }}
         >
           <button
@@ -1046,7 +1062,7 @@ export default function ObservacionesPage() {
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
-              flex: isMobileViewport ? "1 1 160px" : undefined,
+              flex: isMobileViewport ? "1 1 100%" : undefined,
             }}
           >
             Nueva observacion
@@ -1064,7 +1080,7 @@ export default function ObservacionesPage() {
               background: "white",
               fontWeight: 800,
               cursor: "pointer",
-              flex: isMobileViewport ? "1 1 120px" : undefined,
+              flex: isMobileViewport ? "1 1 45%" : undefined,
             }}
           >
             Recargar
@@ -1090,7 +1106,7 @@ export default function ObservacionesPage() {
               flex: isMobileViewport ? "0 0 auto" : undefined,
             }}
           >
-            ⚙
+            {"\u2699"}
           </button>
 
           <button
@@ -1151,7 +1167,7 @@ export default function ObservacionesPage() {
             background: "rgba(15, 23, 42, 0.35)",
             border: "1px solid rgba(148, 163, 184, 0.45)",
             borderRadius: 14,
-            padding: 14,
+            padding: panelPad,
             boxShadow: "0 20px 50px rgba(2, 6, 23, 0.35)",
             backdropFilter: "blur(8px)",
             outline: "1px solid rgba(148, 163, 184, 0.15)",
@@ -1176,7 +1192,7 @@ export default function ObservacionesPage() {
                     style={{
                       border: `1px solid ${getRiesgoColor(o.categoria)}`,
                       borderRadius: 16,
-                      padding: 16,
+                      padding: itemPad,
                       background: "linear-gradient(180deg, #DCE6F2 0%, #C9D6E6 100%)",
                       boxShadow: "0 6px 16px rgba(15,23,42,0.08)",
                     }}
@@ -1189,11 +1205,11 @@ export default function ObservacionesPage() {
                         alignItems: isMobileViewport ? "start" : "center",
                       }}
                     >
-                      <div style={{ display: "grid", gap: 6 }}>
+                      <div style={{ display: "grid", gap: 6, minWidth: 0 }}>
                         <div style={{ fontSize: 12, fontWeight: 900 }}>
                           REPORTANTE: <span style={{ textTransform: "uppercase" }}>{o.responsable}</span>
                         </div>
-                        <div style={{ fontSize: 16, fontWeight: 900 }}>
+                        <div style={{ fontSize: isMobileViewport ? 15 : 16, fontWeight: 900, lineHeight: 1.2, wordBreak: "break-word" }}>
                           {o.area} · {o.equipo_lugar}
                         </div>
                         <div style={{ fontSize: 12, color: "#2563eb", fontWeight: 900 }}>
@@ -1271,7 +1287,7 @@ export default function ObservacionesPage() {
                             <Pill text={s.label} tone={pillTone} />
                           </div>
                         </div>
-                        <div style={{ fontSize: 14, fontWeight: 800 }}>{o.descripcion}</div>
+                        <div style={{ fontSize: isMobileViewport ? 13 : 14, fontWeight: 800, lineHeight: 1.35, wordBreak: "break-word" }}>{o.descripcion}</div>
 
                         <div style={{ marginTop: 4, display: "flex", gap: 10, flexWrap: "wrap" }}>
                           <button
@@ -1288,6 +1304,8 @@ export default function ObservacionesPage() {
                               display: "inline-flex",
                               alignItems: "center",
                               gap: 8,
+                              flex: isMobileViewport ? "1 1 45%" : undefined,
+                              justifyContent: "center",
                             }}
                           >
                             ✅ Cerrar
@@ -1308,6 +1326,8 @@ export default function ObservacionesPage() {
                                 alignItems: "center",
                                 gap: 8,
                                 cursor: "pointer",
+                                flex: isMobileViewport ? "1 1 45%" : undefined,
+                                justifyContent: "center",
                               }}
                             >
                               ✏️ Editar
@@ -1354,7 +1374,7 @@ export default function ObservacionesPage() {
             background: "rgba(15, 23, 42, 0.35)",
             border: "1px solid rgba(148, 163, 184, 0.45)",
             borderRadius: 14,
-            padding: 14,
+            padding: panelPad,
             boxShadow: "0 20px 50px rgba(2, 6, 23, 0.35)",
             backdropFilter: "blur(8px)",
             outline: "1px solid rgba(148, 163, 184, 0.15)",
@@ -1374,7 +1394,7 @@ export default function ObservacionesPage() {
                   style={{
                     border: `1px solid ${getRiesgoColor(o.categoria)}`,
                     borderRadius: 16,
-                    padding: 16,
+                    padding: itemPad,
                     background: "linear-gradient(180deg, #DCE6F2 0%, #C9D6E6 100%)",
                     boxShadow: "0 6px 16px rgba(15,23,42,0.08)",
                   }}
@@ -1394,7 +1414,7 @@ export default function ObservacionesPage() {
                           {usuariosByEmail[o.cerrado_por ?? ""] || o.cerrado_por || "-"}
                         </span>
                       </div>
-                      <div style={{ fontSize: 16, fontWeight: 900 }}>
+                      <div style={{ fontSize: isMobileViewport ? 15 : 16, fontWeight: 900, lineHeight: 1.2, wordBreak: "break-word" }}>
                         {o.area} · {o.equipo_lugar}
                       </div>
                       <div style={{ fontSize: 12, color: "#2563eb", fontWeight: 900 }}>
@@ -1508,14 +1528,14 @@ export default function ObservacionesPage() {
                       )}
                     </div>
 
-                    <div className="min-w-0" style={{ display: "grid", gap: 8 }}>
-                      <div className="flex items-center gap-2">
+                    <div style={{ display: "grid", gap: 8, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: isMobileViewport ? "flex-start" : "center", flexDirection: isMobileViewport ? "column" : "row", gap: 8 }}>
                         <div style={{ fontWeight: 900, fontSize: 13, color: "#111827" }}>Observación:</div>
-                        <div className="ml-auto flex items-center gap-2">
+                        <div style={{ marginLeft: isMobileViewport ? 0 : "auto", display: "flex", alignItems: "center", gap: 8 }}>
                           <Pill text="Cerrada" tone="gray" />
                         </div>
                       </div>
-                      <div style={{ fontSize: 14, fontWeight: 800 }}>{o.descripcion}</div>
+                      <div style={{ fontSize: isMobileViewport ? 13 : 14, fontWeight: 800, lineHeight: 1.35, wordBreak: "break-word" }}>{o.descripcion}</div>
 
                       <div
                         style={{
@@ -1526,6 +1546,8 @@ export default function ObservacionesPage() {
                           border: "1px solid #e5e7eb",
                           borderRadius: 10,
                           padding: 10,
+                          wordBreak: "break-word",
+                          lineHeight: 1.35,
                         }}
                       >
                         🛠 Trabajo realizado: {o.cierre_descripcion || "—"}
